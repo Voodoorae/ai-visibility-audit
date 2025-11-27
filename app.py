@@ -8,6 +8,9 @@ import urllib3
 import random
 import hashlib
 import base64
+import pandas as pd
+import json
+import os
 
 # --- SAFE IMPORT FOR PDF GENERATION ---
 try:
@@ -35,7 +38,6 @@ st.markdown("""
 
     .stApp { background-color: #1A1F2A; color: white; }
     
-    /* 1. BRANDING FIX: Found by AI Header */
     h1 { 
         color: #FFDA47 !important; 
         font-family: 'Spectral', serif !important; 
@@ -69,17 +71,7 @@ st.markdown("""
         margin-right: auto;
     }
 
-    /* 3. INLINE FORM STYLING */
-    /* Forces the button to align nicely with the text input */
-    .stButton {
-        margin-top: 0px;
-    }
-    div[data-testid="stForm"] {
-        border: none;
-        padding: 0;
-    }
-
-    /* ALL BUTTONS - FORCE AMBER & FULL WIDTH */
+    /* Buttons */
     button {
         background-color: #FFDA47 !important; 
         color: #000000 !important;
@@ -102,7 +94,7 @@ st.markdown("""
         border: none !important;
     }
     
-    /* 6. LINK BUTTONS (HTML) */
+    /* HTML Link Buttons */
     .amber-btn {
         display: block;
         background-color: #FFDA47;
@@ -129,7 +121,7 @@ st.markdown("""
         transform: scale(1.02);
     }
 
-    /* 4. COMPACT SCORE CARD */
+    /* Score Card */
     .score-container { 
         background-color: #252B3B; 
         border-radius: 15px; 
@@ -140,7 +132,6 @@ st.markdown("""
         border: 1px solid #3E4658; 
         box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
     }
-    /* Reduced Score Size (by ~400%) */
     .score-circle { 
         font-size: 36px !important; 
         font-weight: 800; 
@@ -176,25 +167,74 @@ st.markdown("""
         text-align: center;
     }
     
-    /* Tripwire Box */
     .tripwire-box { 
         background: linear-gradient(135deg, #0B3C5D 0%, #1A1F2A 100%); 
         border: 2px solid #FFDA47; 
         border-radius: 12px; 
         padding: 20px; 
-        margin-top: 10px; /* Reduced space */
+        margin-top: 10px; 
         margin-bottom: 20px;
         text-align: center; 
     }
     
-    /* Centering Utility */
-    .centered-btn-container {
-        display: flex;
-        justify-content: center;
-        width: 100%;
+    .signals-header {
+        text-align: center;
+        color: #FFDA47;
+        font-family: 'Spectral', serif;
+        font-weight: 700;
+        font-size: 22px;
+        margin-top: 30px;
+        margin-bottom: 20px;
+        letter-spacing: 0.5px;
+    }
+    .signal-item {
+        background-color: #2D3342;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        color: #E0E0E0;
+        border-left: 3px solid #28A745;
+    }
+    
+    /* Admin Panel Styles */
+    .admin-box {
+        border: 1px solid #444;
+        padding: 15px;
+        border-radius: 5px;
+        background-color: #222;
+        margin-top: 50px;
     }
     </style>
 """, unsafe_allow_html=True)
+
+# --- DATABASE / CSV HANDLER ---
+LEADS_FILE = "leads.csv"
+
+def load_leads():
+    if os.path.exists(LEADS_FILE):
+        return pd.read_csv(LEADS_FILE)
+    else:
+        return pd.DataFrame(columns=["Timestamp", "Name", "Email", "URL", "Score", "Verdict", "AuditData", "Sent"])
+
+def save_lead(name, email, url, score, verdict, audit_data):
+    df = load_leads()
+    new_entry = {
+        "Timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "Name": name,
+        "Email": email,
+        "URL": url,
+        "Score": score,
+        "Verdict": verdict,
+        "AuditData": json.dumps(audit_data), # Save full data to regenerate PDF later
+        "Sent": False
+    }
+    df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
+    df.to_csv(LEADS_FILE, index=False)
+
+def update_leads(df):
+    df.to_csv(LEADS_FILE, index=False)
 
 # --- PDF GENERATOR ---
 if PDF_AVAILABLE:
@@ -233,9 +273,16 @@ if PDF_AVAILABLE:
             pdf.cell(0, 10, f"{criterion}: {status} ({details['points']}/{details['max']})", 0, 1)
             pdf.set_font("Arial", "I", 10)
             pdf.cell(0, 10, f"   Note: {details['note']}", 0, 1)
+        pdf.ln(10)
+        pdf.set_font("Arial", "B", 14)
+        pdf.cell(0, 10, "Why Your Score Matters", 0, 1, 'L')
+        pdf.ln(5)
+        pdf.set_font("Arial", "", 11)
+        education_text = """1. The Firewall Problem: If your site blocks our scanner, it likely blocks Siri and Alexa too.\n2. Schema Markup: This is the hidden language of AI. Without it, you are just text.\n3. Accessibility: AI models prioritize sites that are accessible to screen readers."""
+        pdf.multi_cell(0, 8, education_text)
         return pdf.output(dest='S').encode('latin-1')
 
-# --- ENGINES (Smart Connect & Fallback) ---
+# --- ANALYZER LOGIC ---
 def fallback_analysis(url):
     clean_url = url.replace("https://", "").replace("http://", "").replace("www.", "")
     domain_hash = int(hashlib.sha256(clean_url.encode('utf-8')).hexdigest(), 16)
@@ -276,37 +323,30 @@ def analyze_website(raw_url):
         soup = BeautifulSoup(response.content, 'html.parser')
         text = soup.get_text().lower()
         score = 0
-        
-        # Scoring Logic
         images = soup.find_all('img')
         imgs_with_alt = sum(1 for img in images if img.get('alt'))
         total_imgs = len(images)
         acc_score = 20 if total_imgs == 0 or (imgs_with_alt / total_imgs) > 0.8 else 0
         results["breakdown"]["Accessibility"] = {"points": acc_score, "max": 20, "note": "Checked Alt Tags."}
         score += acc_score
-
         headers_h = soup.find_all(['h1', 'h2', 'h3'])
         q_words = ['how', 'cost', 'price', 'where', 'faq']
         has_questions = any(any(q in h.get_text().lower() for q in q_words) for h in headers_h)
         voice_score = 20 if has_questions else 0
         results["breakdown"]["Voice Search"] = {"points": voice_score, "max": 20, "note": "Checked Headers."}
         score += voice_score
-
         schemas = soup.find_all('script', type='application/ld+json')
         schema_score = 20 if len(schemas) > 0 else 0
         results["breakdown"]["Schema Code"] = {"points": schema_score, "max": 20, "note": "Checked JSON-LD."}
         score += schema_score
-
         phone = re.search(r"(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}", text)
         loc_score = 20 if phone else 5
         results["breakdown"]["Local Signals"] = {"points": loc_score, "max": 20, "note": "Checked Phone."}
         score += loc_score
-
         current_year = str(datetime.datetime.now().year)
         fresh_score = 20 if current_year in text else 0
         results["breakdown"]["Freshness"] = {"points": fresh_score, "max": 20, "note": "Checked Copyright."}
         score += fresh_score
-        
         results["score"] = score
         if score < 60: results["verdict"], results["color"], results["summary"] = "INVISIBLE TO AI", "#FF4B4B", "Your site is failing core visibility checks."
         elif score < 81: results["verdict"], results["color"], results["summary"] = "PARTIALLY VISIBLE", "#FFDA47", "You are visible, but not optimized."
@@ -315,10 +355,7 @@ def analyze_website(raw_url):
     except Exception: return fallback_analysis(raw_url)
 
 # --- UI RENDER ---
-# 1. Branding: Found by AI
 st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
-
-# 2. Updated Sub-Head with Google and Apple
 st.markdown("<div class='sub-head'>Is your business visible to Google, Apple, Siri, Alexa, and AI Search Agents?</div>", unsafe_allow_html=True)
 
 if "audit_data" not in st.session_state:
@@ -326,26 +363,21 @@ if "audit_data" not in st.session_state:
 if "url_input" not in st.session_state:
     st.session_state.url_input = ""
 
-# 3. 2-COLUMN LAYOUT FOR INPUT & BUTTON
 with st.form(key='audit_form'):
     col1, col2 = st.columns([3, 1])
     with col1:
         url = st.text_input("Enter Website URL", placeholder="e.g. plumber-marketing.com", label_visibility="collapsed")
     with col2:
-        # Empty label to align with input field
         submit = st.form_submit_button(label='RUN THE AUDIT')
 
-# --- 8 SIGNALS SECTION (Only shown before Audit) ---
 if not st.session_state.audit_data:
     st.markdown("<div class='explainer-text'>Is your site blocking AI scanners? Are you visible to Google, Apple, and Alexa voice agents?<br><strong>Find out how visible you really are.</strong></div>", unsafe_allow_html=True)
     st.markdown("<div class='signals-header'>8 Critical Signals Required for AI Visibility</div>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
-    signals_1 = ["Voice Assistant Readiness", "AI Crawler Access", "Schema Markup", "Content Freshness"]
-    signals_2 = ["Accessibility Compliance", "SSL Security", "Mobile Readiness", "Entity Clarity"]
     with col1:
-        for sig in signals_1: st.markdown(f"<div class='signal-item'>✅ {sig}</div>", unsafe_allow_html=True)
+        for sig in ["Voice Assistant Readiness", "AI Crawler Access", "Schema Markup", "Content Freshness"]: st.markdown(f"<div class='signal-item'>✅ {sig}</div>", unsafe_allow_html=True)
     with col2:
-        for sig in signals_2: st.markdown(f"<div class='signal-item'>✅ {sig}</div>", unsafe_allow_html=True)
+        for sig in ["Accessibility Compliance", "SSL Security", "Mobile Readiness", "Entity Clarity"]: st.markdown(f"<div class='signal-item'>✅ {sig}</div>", unsafe_allow_html=True)
 
 if submit and url:
     st.session_state.url_input = url
@@ -358,7 +390,6 @@ if st.session_state.audit_data:
     data = st.session_state.audit_data
     score_color = data.get("color", "#FFDA47")
     
-    # 4. COMPACT SCORE CARD (36px font)
     st.markdown(f"""
     <div class="score-container" style="border-top: 5px solid {score_color};">
         <div class="score-label">AI VISIBILITY SCORE</div>
@@ -375,11 +406,10 @@ if st.session_state.audit_data:
         </div>
         """, unsafe_allow_html=True)
 
-    # 5. EMAIL FORM (Centered Button)
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-    st.markdown("### 1. Get Your Full Report")
-    st.markdown("<p style='color:#ccc; font-size:14px; text-align:center;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#FFDA47; font-size:22px; text-align:center; font-weight:700; font-family:Spectral, serif;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
     
+    # LEAD CAPTURE FORM
     with st.form(key='email_form'):
         c1, c2 = st.columns(2)
         with c1:
@@ -387,27 +417,18 @@ if st.session_state.audit_data:
         with c2:
             email = st.text_input("Email", placeholder="name@company.com")
         
-        # Center the submit button using columns inside the form
         b1, b2, b3 = st.columns([1, 2, 1])
         with b2:
             get_pdf = st.form_submit_button("EMAIL ME MY FOUND SCORE ANALYSIS")
         
         if get_pdf:
-            if name and email and "@" in email and PDF_AVAILABLE:
-                try:
-                    pdf_bytes = create_download_pdf(data, st.session_state.url_input)
-                    b64 = base64.b64encode(pdf_bytes).decode()
-                    href = f'<a href="data:application/octet-stream;base64,{b64}" download="FoundByAI_Report.pdf" style="text-decoration:none;"><button style="background-color: #28A745; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-weight: bold; width: 100%; cursor: pointer;">⬇️ DOWNLOAD PDF REPORT</button></a>'
-                    st.markdown(href, unsafe_allow_html=True)
-                    st.success(f"Report generated for {email}!")
-                except Exception as e:
-                    st.error("PDF Error: Ensure fpdf is installed.")
-            elif not PDF_AVAILABLE:
-                st.error("PDF Generation unavailable. Please install 'fpdf' in requirements.txt")
+            if name and email and "@" in email:
+                save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
+                st.success(f"Success! Your report is being generated and will be emailed to {email} shortly.")
             else:
-                st.error("Please enter your name and email.")
+                st.error("Please enter your name and valid email.")
 
-    # 6. TRIPWIRE (Reduced White Space & Updated Copy)
+    # TRIPWIRE & BUTTONS
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
     st.markdown("<h3 style='text-align: center; color: #FFDA47; margin-bottom: 5px;'>UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>", unsafe_allow_html=True)
     st.markdown("""
@@ -417,8 +438,14 @@ if st.session_state.audit_data:
     </p>
     """, unsafe_allow_html=True)
     
+    b_col1, b_col2 = st.columns(2)
+    with b_col1:
+        st.markdown("""<a href="https://your-checkout-link-toolkit.com" target="_blank" class="amber-btn">FAST FIX TOOLKIT £27</a>""", unsafe_allow_html=True)
+    with b_col2:
+        st.markdown("""<a href="https://your-checkout-link-tuneup.com" target="_blank" class="amber-btn">BOOK TUNE UP £150</a>""", unsafe_allow_html=True)
+
     st.markdown("""
-    <div style='background-color: #2D3342; padding: 20px; border-radius: 8px; margin-bottom: 20px;'>
+    <div style='background-color: #2D3342; padding: 20px; border-radius: 8px; margin-top: 30px; margin-bottom: 20px;'>
         <div style='margin-bottom: 10px;'>✅ <strong>The Unblocker Guide:</strong> Remove AI crawler blockages.</div>
         <div style='margin-bottom: 10px;'>✅ <strong>Accessibility Tags:</strong> Rank for Voice Search.</div>
         <div style='margin-bottom: 10px;'>✅ <strong>Schema Generator:</strong> Tell AI exactly what you do.</div>
@@ -427,24 +454,6 @@ if st.session_state.audit_data:
     </div>
     """, unsafe_allow_html=True)
 
-    # 6. ACTION BUTTONS (Renamed & No Pricing Text Below)
-    b_col1, b_col2 = st.columns(2)
-    
-    with b_col1:
-        st.markdown("""
-        <a href="https://your-checkout-link-toolkit.com" target="_blank" class="amber-btn">
-            FAST FIX TOOLKIT £27
-        </a>
-        """, unsafe_allow_html=True)
-        
-    with b_col2:
-        st.markdown("""
-        <a href="https://your-checkout-link-tuneup.com" target="_blank" class="amber-btn">
-            BOOK TUNE UP £150
-        </a>
-        """, unsafe_allow_html=True)
-
-    # 7. CENTERED START NEW AUDIT BUTTON
     st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns([1, 2, 1])
     with c2:
@@ -452,3 +461,37 @@ if st.session_state.audit_data:
             st.session_state.audit_data = None
             st.session_state.url_input = ""
             st.rerun()
+
+# --- ADMIN PANEL ---
+with st.expander("Admin Panel (Restricted)"):
+    password = st.text_input("Enter Admin Password", type="password")
+    if password == "318345":
+        st.success("Access Granted")
+        df = load_leads()
+        
+        # Interactive Editor
+        edited_df = st.data_editor(df, num_rows="dynamic")
+        
+        if st.button("Update Status"):
+            update_leads(edited_df)
+            st.success("Database Updated")
+            
+        st.download_button(
+            label="Download CSV",
+            data=edited_df.to_csv(index=False).encode('utf-8'),
+            file_name='leads.csv',
+            mime='text/csv'
+        )
+        
+        st.write("### Regenerate Client PDF")
+        selected_row = st.selectbox("Select Lead to Generate PDF", df.index, format_func=lambda x: f"{df.iloc[x]['Name']} - {df.iloc[x]['URL']}")
+        if st.button("Generate & Download PDF"):
+            try:
+                row = df.iloc[selected_row]
+                audit_data = json.loads(row['AuditData'])
+                pdf_bytes = create_download_pdf(audit_data, row['URL'])
+                b64 = base64.b64encode(pdf_bytes).decode()
+                href = f'<a href="data:application/octet-stream;base64,{b64}" download="Report_{row["Name"]}.pdf">Click to Download PDF</a>'
+                st.markdown(href, unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"Error: {e}")
