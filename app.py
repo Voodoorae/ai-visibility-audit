@@ -459,14 +459,14 @@ if st.session_state.audit_data:
     
     # Center the "Start New Audit" button
     c1, c2, c3 = st.columns([1, 1, 1])
+    
+    def clear_form():
+        st.session_state.audit_data = None
+        st.session_state.url_input = ""
+        st.session_state.url_field = ""
+        
     with c2:
-        if st.button("🔄 START A NEW AUDIT"):
-            # Clear all session state related to the audit
-            st.session_state.audit_data = None
-            st.session_state.url_input = ""
-            # This relies on the key "url_field" in text_input
-            st.session_state.url_field = "" 
-            st.rerun()
+        st.button("🔄 START A NEW AUDIT", on_click=clear_form)
 
 # --- ADMIN PANEL ---
 if "admin_unlocked" not in st.session_state:
