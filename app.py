@@ -35,7 +35,7 @@ st.set_page_config(
 meta_tags = """
 <meta property="og:title" content="Found By AI - Visibility Audit">
 <meta property="og:description" content="Is your business invisible to Siri, Alexa & Google? Check your AI Visibility Score now.">
-<meta property="og:image" content="https://placehold.co/600x400/FFDA47/000000?text=Found+By+AI+Score">
+<meta property="og:image" content="https://github.com/Voodoorae/ai-visibility-audit/blob/main/Gemini_Generated_Image_tzlldqtzlldqtzll.png?raw=true">
 <meta name="twitter:card" content="summary_large_image">
 """
 st.markdown(meta_tags, unsafe_allow_html=True)
