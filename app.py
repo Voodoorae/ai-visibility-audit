@@ -227,7 +227,7 @@ def save_lead(name, email, url, score, verdict, audit_data):
         "URL": url,
         "Score": score,
         "Verdict": verdict,
-        "AuditData": json.dumps(audit_data), # Save full data to regenerate PDF later
+        "AuditData": json.dumps(audit_data), 
         "Sent": False
     }
     df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
@@ -366,7 +366,8 @@ if "url_input" not in st.session_state:
 with st.form(key='audit_form'):
     col1, col2 = st.columns([3, 1])
     with col1:
-        url = st.text_input("Enter Website URL", placeholder="e.g. plumber-marketing.com", label_visibility="collapsed")
+        # Link the input to session state
+        url = st.text_input("Enter Website URL", placeholder="e.g. plumber-marketing.com", label_visibility="collapsed", key="url_field")
     with col2:
         submit = st.form_submit_button(label='RUN THE AUDIT')
 
@@ -409,7 +410,6 @@ if st.session_state.audit_data:
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
     st.markdown("<p style='color:#FFDA47; font-size:22px; text-align:center; font-weight:700; font-family:Spectral, serif;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
     
-    # LEAD CAPTURE FORM
     with st.form(key='email_form'):
         c1, c2 = st.columns(2)
         with c1:
@@ -424,17 +424,18 @@ if st.session_state.audit_data:
         if get_pdf:
             if name and email and "@" in email:
                 save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
-                st.success(f"Success! Your report is being generated and will be emailed to {email} shortly.")
+                # Success message in WHITE text
+                st.markdown(f"<p style='color: white; font-weight: bold; text-align: center; background-color: #28a745; padding: 10px; border-radius: 5px;'>Success! Your report is being generated and will be emailed to {email} shortly.</p>", unsafe_allow_html=True)
             else:
                 st.error("Please enter your name and valid email.")
 
-    # TRIPWIRE & BUTTONS
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
     st.markdown("<h3 style='text-align: center; color: #FFDA47; margin-bottom: 5px;'>UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>", unsafe_allow_html=True)
     st.markdown("""
-    <p style='text-align: center; color: #fff; margin-bottom: 20px; font-size: 16px;'>
-        You are missing critical AI signals. Get the <strong>Fast Fix Toolkit</strong> to unlock your visibility<br>
-        or get the <strong>Done For You Tune Up</strong> for a fast hands off full fix.
+    <p style='text-align: center; color: #fff; margin-bottom: 20px; font-size: 16px; line-height: 1.6;'>
+        You are missing critical AI signals.<br>
+        Get the <strong style='color: #FFDA47;'>Fast Fix Toolkit</strong> to unlock your visibility<br>
+        or get the <strong style='color: #FFDA47;'>Done For You Tune Up</strong> for a fast, hands off full fix.
     </p>
     """, unsafe_allow_html=True)
     
@@ -455,21 +456,33 @@ if st.session_state.audit_data:
     """, unsafe_allow_html=True)
 
     st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
-    c1, c2, c3 = st.columns([1, 2, 1])
+    
+    # Center the "Start New Audit" button
+    c1, c2, c3 = st.columns([1, 1, 1])
     with c2:
         if st.button("🔄 START A NEW AUDIT"):
+            # Clear all session state related to the audit
             st.session_state.audit_data = None
             st.session_state.url_input = ""
+            # This relies on the key "url_field" in text_input
+            st.session_state.url_field = "" 
             st.rerun()
 
 # --- ADMIN PANEL ---
+if "admin_unlocked" not in st.session_state:
+    st.session_state.admin_unlocked = False
+
 with st.expander("Admin Panel (Restricted)"):
-    password = st.text_input("Enter Admin Password", type="password")
-    if password == "318345":
+    if not st.session_state.admin_unlocked:
+        password = st.text_input("Enter Admin Password", type="password", key="admin_pw_input")
+        if password == "318345":
+            st.session_state.admin_unlocked = True
+            st.rerun()
+    
+    if st.session_state.admin_unlocked:
         st.success("Access Granted")
         df = load_leads()
         
-        # Interactive Editor
         edited_df = st.data_editor(df, num_rows="dynamic")
         
         if st.button("Update Status"):
@@ -483,15 +496,24 @@ with st.expander("Admin Panel (Restricted)"):
             mime='text/csv'
         )
         
-        st.write("### Regenerate Client PDF")
-        selected_row = st.selectbox("Select Lead to Generate PDF", df.index, format_func=lambda x: f"{df.iloc[x]['Name']} - {df.iloc[x]['URL']}")
-        if st.button("Generate & Download PDF"):
-            try:
-                row = df.iloc[selected_row]
-                audit_data = json.loads(row['AuditData'])
-                pdf_bytes = create_download_pdf(audit_data, row['URL'])
-                b64 = base64.b64encode(pdf_bytes).decode()
-                href = f'<a href="data:application/octet-stream;base64,{b64}" download="Report_{row["Name"]}.pdf">Click to Download PDF</a>'
-                st.markdown(href, unsafe_allow_html=True)
-            except Exception as e:
-                st.error(f"Error: {e}")
+        if not df.empty:
+            st.write("### Regenerate Client PDF")
+            selected_row = st.selectbox("Select Lead to Generate PDF", df.index, format_func=lambda x: f"{df.iloc[x]['Name']} - {df.iloc[x]['URL']}")
+            if st.button("Generate & Download PDF"):
+                try:
+                    row = df.iloc[selected_row]
+                    # Check if AuditData is valid JSON string or dict
+                    audit_data_raw = row['AuditData']
+                    if isinstance(audit_data_raw, str):
+                        audit_data = json.loads(audit_data_raw)
+                    else:
+                        audit_data = audit_data_raw
+                        
+                    pdf_bytes = create_download_pdf(audit_data, row['URL'])
+                    b64 = base64.b64encode(pdf_bytes).decode()
+                    href = f'<a href="data:application/octet-stream;base64,{b64}" download="Report_{row["Name"]}.pdf">Click to Download PDF</a>'
+                    st.markdown(href, unsafe_allow_html=True)
+                except Exception as e:
+                    st.error(f"Error: {e}")
+        else:
+            st.info("No leads captured yet.")
