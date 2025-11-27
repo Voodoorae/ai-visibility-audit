@@ -30,6 +30,16 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# --- SOCIAL META TAGS (The Fix for Missing Dashboard Setting) ---
+# Replace the 'content' URL below with your actual hosted logo URL for social sharing
+meta_tags = """
+<meta property="og:title" content="Found By AI - Visibility Audit">
+<meta property="og:description" content="Is your business invisible to Siri, Alexa & Google? Check your AI Visibility Score now.">
+<meta property="og:image" content="https://placehold.co/600x400/FFDA47/000000?text=Found+By+AI+Score">
+<meta name="twitter:card" content="summary_large_image">
+"""
+st.markdown(meta_tags, unsafe_allow_html=True)
+
 # --- CUSTOM CSS ---
 st.markdown("""
     <style>
@@ -38,6 +48,7 @@ st.markdown("""
 
     .stApp { background-color: #1A1F2A; color: white; }
     
+    /* Headers */
     h1 { 
         color: #FFDA47 !important; 
         font-family: 'Spectral', serif !important; 
@@ -71,23 +82,23 @@ st.markdown("""
         margin-right: auto;
     }
 
-    /* Buttons */
-    button {
+    /* Buttons - Global Override */
+    div.stButton > button { 
         background-color: #FFDA47 !important; 
         color: #000000 !important;
         font-weight: 900 !important; 
         border-radius: 8px !important; 
         border: none !important; 
-        height: 50px !important; 
+        height: 55px !important; 
         width: 100% !important; 
-        font-size: 16px !important; 
+        font-size: 18px !important; 
         text-transform: uppercase !important; 
         letter-spacing: 1px !important; 
         transition: transform 0.1s ease-in-out !important; 
         font-family: 'Inter', sans-serif !important; 
     }
 
-    button:hover {
+    div.stButton > button:hover {
         background-color: white !important; 
         color: #000000 !important; 
         transform: scale(1.02); 
@@ -110,7 +121,7 @@ st.markdown("""
         text-align: center;
         line-height: 55px;
         text-decoration: none;
-        font-family: 'Inter', sans-serif;
+        font-family: 'Spectral', serif;
         margin-bottom: 0px;
         transition: transform 0.1s ease-in-out;
         box-shadow: 0 4px 6px rgba(0,0,0,0.2);
@@ -205,6 +216,13 @@ st.markdown("""
         border-radius: 5px;
         background-color: #222;
         margin-top: 50px;
+    }
+    
+    /* Form Input Fix */
+    .stTextInput > div > div > input {
+        background-color: #2D3342;
+        color: white;
+        border: 1px solid #4A5568;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -363,14 +381,15 @@ if "audit_data" not in st.session_state:
 if "url_input" not in st.session_state:
     st.session_state.url_input = ""
 
+# --- AUDIT FORM (2 Column) ---
 with st.form(key='audit_form'):
     col1, col2 = st.columns([3, 1])
     with col1:
-        # Link the input to session state
         url = st.text_input("Enter Website URL", placeholder="e.g. plumber-marketing.com", label_visibility="collapsed", key="url_field")
     with col2:
         submit = st.form_submit_button(label='RUN THE AUDIT')
 
+# --- 8 SIGNALS SECTION (Only shown before Audit) ---
 if not st.session_state.audit_data:
     st.markdown("<div class='explainer-text'>Is your site blocking AI scanners? Are you visible to Google, Apple, and Alexa voice agents?<br><strong>Find out how visible you really are.</strong></div>", unsafe_allow_html=True)
     st.markdown("<div class='signals-header'>8 Critical Signals Required for AI Visibility</div>", unsafe_allow_html=True)
@@ -391,6 +410,7 @@ if st.session_state.audit_data:
     data = st.session_state.audit_data
     score_color = data.get("color", "#FFDA47")
     
+    # 1. COMPACT SCORE CARD
     st.markdown(f"""
     <div class="score-container" style="border-top: 5px solid {score_color};">
         <div class="score-label">AI VISIBILITY SCORE</div>
@@ -410,6 +430,7 @@ if st.session_state.audit_data:
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
     st.markdown("<p style='color:#FFDA47; font-size:22px; text-align:center; font-weight:700; font-family:Spectral, serif;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
     
+    # 2. EMAIL FORM (Centered Button)
     with st.form(key='email_form'):
         c1, c2 = st.columns(2)
         with c1:
@@ -419,16 +440,16 @@ if st.session_state.audit_data:
         
         b1, b2, b3 = st.columns([1, 2, 1])
         with b2:
-            get_pdf = st.form_submit_button("EMAIL ME MY FOUND SCORE ANALYSIS")
+            get_pdf = st.form_submit_button("EMAIL ME THE REPORT")
         
         if get_pdf:
             if name and email and "@" in email:
                 save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
-                # Success message in WHITE text
                 st.markdown(f"<p style='color: white; font-weight: bold; text-align: center; background-color: #28a745; padding: 10px; border-radius: 5px;'>Success! Your report is being generated and will be emailed to {email} shortly.</p>", unsafe_allow_html=True)
             else:
                 st.error("Please enter your name and valid email.")
 
+    # 3. TRIPWIRE (Reduced White Space & Updated Copy)
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
     st.markdown("<h3 style='text-align: center; color: #FFDA47; margin-bottom: 5px;'>UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>", unsafe_allow_html=True)
     st.markdown("""
@@ -439,6 +460,7 @@ if st.session_state.audit_data:
     </p>
     """, unsafe_allow_html=True)
     
+    # 4. ACTION BUTTONS (2 Columns Side-by-Side)
     b_col1, b_col2 = st.columns(2)
     with b_col1:
         st.markdown("""<a href="https://your-checkout-link-toolkit.com" target="_blank" class="amber-btn">FAST FIX TOOLKIT £27</a>""", unsafe_allow_html=True)
@@ -457,9 +479,8 @@ if st.session_state.audit_data:
 
     st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
     
-    # Center the "Start New Audit" button
+    # 5. CENTERED START NEW AUDIT BUTTON
     c1, c2, c3 = st.columns([1, 1, 1])
-    
     def clear_form():
         st.session_state.audit_data = None
         st.session_state.url_input = ""
@@ -482,19 +503,13 @@ with st.expander("Admin Panel (Restricted)"):
     if st.session_state.admin_unlocked:
         st.success("Access Granted")
         df = load_leads()
-        
         edited_df = st.data_editor(df, num_rows="dynamic")
         
         if st.button("Update Status"):
             update_leads(edited_df)
             st.success("Database Updated")
             
-        st.download_button(
-            label="Download CSV",
-            data=edited_df.to_csv(index=False).encode('utf-8'),
-            file_name='leads.csv',
-            mime='text/csv'
-        )
+        st.download_button(label="Download CSV", data=edited_df.to_csv(index=False).encode('utf-8'), file_name='leads.csv', mime='text/csv')
         
         if not df.empty:
             st.write("### Regenerate Client PDF")
@@ -502,13 +517,9 @@ with st.expander("Admin Panel (Restricted)"):
             if st.button("Generate & Download PDF"):
                 try:
                     row = df.iloc[selected_row]
-                    # Check if AuditData is valid JSON string or dict
                     audit_data_raw = row['AuditData']
-                    if isinstance(audit_data_raw, str):
-                        audit_data = json.loads(audit_data_raw)
-                    else:
-                        audit_data = audit_data_raw
-                        
+                    if isinstance(audit_data_raw, str): audit_data = json.loads(audit_data_raw)
+                    else: audit_data = audit_data_raw
                     pdf_bytes = create_download_pdf(audit_data, row['URL'])
                     b64 = base64.b64encode(pdf_bytes).decode()
                     href = f'<a href="data:application/octet-stream;base64,{b64}" download="Report_{row["Name"]}.pdf">Click to Download PDF</a>'
