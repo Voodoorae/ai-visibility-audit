@@ -31,15 +31,15 @@ st.set_page_config(
 )
 
 # --- SOCIAL META TAGS ---
-# UPDATED: Using the direct 'raw.githubusercontent' link which is friendlier to Facebook crawlers
+# UPDATED: Fixed file extension to .jpg and used raw link
 meta_tags = """
 <meta property="og:title" content="Found By AI - Visibility Audit">
 <meta property="og:description" content="Is your business invisible to Siri, Alexa & Google? Check your AI Visibility Score now.">
-<meta property="og:image" content="https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.jpg">
 <meta property="og:url" content="https://ai-visibility-audit.streamlit.app">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.jpg">
 """
 st.markdown(meta_tags, unsafe_allow_html=True)
 
@@ -273,21 +273,30 @@ if PDF_AVAILABLE:
     def create_download_pdf(data, url):
         pdf = PDF()
         pdf.add_page()
+        
+        # Title
         pdf.set_font("Arial", "B", 24)
         pdf.cell(0, 10, f"Audit Score: {data['score']}/100", 0, 1, 'C')
         pdf.set_font("Arial", "B", 14)
         pdf.set_text_color(100, 100, 100)
         pdf.cell(0, 10, f"Site: {url}", 0, 1, 'C')
         pdf.ln(10)
+        
+        # Verdict
         pdf.set_font("Arial", "B", 16)
         pdf.set_text_color(0, 0, 0)
         pdf.cell(0, 10, f"Verdict: {data['verdict']}", 0, 1, 'L')
+        
+        # Explanation
         pdf.set_font("Arial", "", 12)
         pdf.multi_cell(0, 10, data['summary'])
         pdf.ln(10)
+        
+        # Hidden Breakdown
         pdf.set_font("Arial", "B", 14)
         pdf.cell(0, 10, "Technical Breakdown", 0, 1, 'L')
         pdf.ln(5)
+        
         pdf.set_font("Arial", "", 12)
         for criterion, details in data['breakdown'].items():
             status = "PASS" if details['points'] == details['max'] else "FAIL"
@@ -295,15 +304,28 @@ if PDF_AVAILABLE:
             pdf.set_font("Arial", "I", 10)
             pdf.cell(0, 10, f"   Note: {details['note']}", 0, 1)
         pdf.ln(10)
+        
+        # Educational Content
         pdf.set_font("Arial", "B", 14)
         pdf.cell(0, 10, "Why Your Score Matters", 0, 1, 'L')
         pdf.ln(5)
+        
         pdf.set_font("Arial", "", 11)
-        education_text = """1. The Firewall Problem: If your site blocks our scanner, it likely blocks Siri and Alexa too.\n2. Schema Markup: This is the hidden language of AI. Without it, you are just text.\n3. Accessibility: AI models prioritize sites that are accessible to screen readers."""
+        education_text = """
+        1. The Firewall Problem (Siri & Alexa): 
+        If your site blocks our scanner, it likely blocks Siri and Alexa too. These agents need to 'read' your site to answer questions like 'What services do you offer?'.
+        
+        2. Schema Markup:
+        This is the hidden language of AI. Without it, you are just text. With it, you are a verified entity.
+        
+        3. Accessibility:
+        AI models prioritize sites that are accessible to screen readers. If a blind user can't read your site, AI won't recommend it.
+        """
         pdf.multi_cell(0, 8, education_text)
+        
         return pdf.output(dest='S').encode('latin-1')
 
-# --- ANALYZER LOGIC ---
+# --- ENGINES (Smart Connect & Fallback) ---
 def fallback_analysis(url):
     clean_url = url.replace("https://", "").replace("http://", "").replace("www.", "")
     domain_hash = int(hashlib.sha256(clean_url.encode('utf-8')).hexdigest(), 16)
@@ -376,6 +398,11 @@ def analyze_website(raw_url):
     except Exception: return fallback_analysis(raw_url)
 
 # --- UI RENDER ---
+col1, col2, col3 = st.columns([1,2,1])
+with col2:
+    # UPDATED LOGO to use the .jpg raw link
+    st.image("https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.jpg", use_container_width=True)
+
 st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
 st.markdown("<div class='sub-head'>Is your business visible to Google, Apple, Siri, Alexa, and AI Search Agents?</div>", unsafe_allow_html=True)
 
