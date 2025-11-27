@@ -31,15 +31,15 @@ st.set_page_config(
 )
 
 # --- SOCIAL META TAGS ---
-# UPDATED: Fixed file extension to .jpg and used raw link
+# UPDATED: Changed to .png based on your GitHub link
 meta_tags = """
 <meta property="og:title" content="Found By AI - Visibility Audit">
 <meta property="og:description" content="Is your business invisible to Siri, Alexa & Google? Check your AI Visibility Score now.">
-<meta property="og:image" content="https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.jpg">
+<meta property="og:image" content="https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.png">
 <meta property="og:url" content="https://ai-visibility-audit.streamlit.app">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.jpg">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.png">
 """
 st.markdown(meta_tags, unsafe_allow_html=True)
 
@@ -400,8 +400,8 @@ def analyze_website(raw_url):
 # --- UI RENDER ---
 col1, col2, col3 = st.columns([1,2,1])
 with col2:
-    # UPDATED LOGO to use the .jpg raw link
-    st.image("https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.jpg", use_container_width=True)
+    # UPDATED LOGO to use the .png raw link
+    st.image("https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.png", use_container_width=True)
 
 st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
 st.markdown("<div class='sub-head'>Is your business visible to Google, Apple, Siri, Alexa, and AI Search Agents?</div>", unsafe_allow_html=True)
@@ -418,6 +418,7 @@ with st.form(key='audit_form'):
     with col2:
         submit = st.form_submit_button(label='RUN THE AUDIT')
 
+# --- 8 SIGNALS SECTION (Only shown before Audit) ---
 if not st.session_state.audit_data:
     st.markdown("<div class='explainer-text'>Is your site blocking AI scanners? Are you visible to Google, Apple, and Alexa voice agents?<br><strong>Find out how visible you really are.</strong></div>", unsafe_allow_html=True)
     st.markdown("<div class='signals-header'>8 Critical Signals Required for AI Visibility</div>", unsafe_allow_html=True)
@@ -438,6 +439,7 @@ if st.session_state.audit_data:
     data = st.session_state.audit_data
     score_color = data.get("color", "#FFDA47")
     
+    # 1. COMPACT SCORE CARD
     st.markdown(f"""
     <div class="score-container" style="border-top: 5px solid {score_color};">
         <div class="score-label">AI VISIBILITY SCORE</div>
@@ -506,6 +508,7 @@ if st.session_state.audit_data:
     st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
     
     c1, c2, c3 = st.columns([1, 1, 1])
+    
     def clear_form():
         st.session_state.audit_data = None
         st.session_state.url_input = ""
