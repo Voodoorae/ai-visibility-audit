@@ -54,7 +54,7 @@ st.markdown("""
     /* Headers */
     h1 { 
         color: #FFDA47 !important; 
-        font-family: 'Spectral', serif !important; 
+        font-family: 'Crimson Pro', serif !important; 
         font-weight: 800; 
         text-align: center; 
         margin-top: 0px;
@@ -152,7 +152,7 @@ st.markdown("""
         line-height: 1; 
         margin-bottom: 5px; 
         color: #FFDA47;
-        font-family: 'Spectral', serif; 
+        font-family: 'Crimson Pro', serif; 
     }
     .score-label { 
         font-size: 12px; 
@@ -165,7 +165,7 @@ st.markdown("""
         font-size: 20px; 
         font-weight: 800; 
         margin-top: 5px; 
-        font-family: 'Spectral', serif; 
+        font-family: 'Crimson Pro', serif; 
     }
     
     .blocked-msg {
@@ -194,7 +194,7 @@ st.markdown("""
     .signals-header {
         text-align: center;
         color: #FFDA47;
-        font-family: 'Spectral', serif;
+        font-family: 'Crimson Pro', serif;
         font-weight: 700;
         font-size: 22px;
         margin-top: 30px;
@@ -457,7 +457,7 @@ if st.session_state.audit_data:
         """, unsafe_allow_html=True)
 
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#FFDA47; font-size:22px; text-align:center; font-weight:700; font-family:Spectral, serif;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#FFDA47; font-size:22px; text-align:center; font-weight:700; font-family:Crimson Pro, serif;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
     
     with st.form(key='email_form'):
         c1, c2 = st.columns(2)
