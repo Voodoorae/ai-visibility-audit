@@ -1,4 +1,4 @@
-import streamlit as st
+aimport streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -30,16 +30,19 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# --- GHL WEBHOOK CONFIGURATION ---
+# TODO: PASTE YOUR GHL WEBHOOK URL BELOW INSIDE THE QUOTES
+GHL_WEBHOOK_URL = "Webhook https://services.leadconnectorhq.com/hooks/8I4dcdbVv5h8XxnqQ9Cg/webhook-trigger/e8d9672c-0b9a-40f6-bc7a-aa93dd78ee99"
+
 # --- SOCIAL META TAGS ---
-# UPDATED: Changed to .png based on your GitHub link
 meta_tags = """
 <meta property="og:title" content="Found By AI - Visibility Audit">
 <meta property="og:description" content="Is your business invisible to Siri, Alexa & Google? Check your AI Visibility Score now.">
-<meta property="og:image" content="https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.jpg">
 <meta property="og:url" content="https://ai-visibility-audit.streamlit.app">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.jpg">
 """
 st.markdown(meta_tags, unsafe_allow_html=True)
 
@@ -54,7 +57,7 @@ st.markdown("""
     /* Headers */
     h1 { 
         color: #FFDA47 !important; 
-        font-family: 'Crimson Pro', serif !important; 
+        font-family: 'Spectral', serif !important; 
         font-weight: 800; 
         text-align: center; 
         margin-top: 0px;
@@ -152,7 +155,7 @@ st.markdown("""
         line-height: 1; 
         margin-bottom: 5px; 
         color: #FFDA47;
-        font-family: 'Crimson Pro', serif; 
+        font-family: 'Spectral', serif; 
     }
     .score-label { 
         font-size: 12px; 
@@ -165,7 +168,7 @@ st.markdown("""
         font-size: 20px; 
         font-weight: 800; 
         margin-top: 5px; 
-        font-family: 'Crimson Pro', serif; 
+        font-family: 'Spectral', serif; 
     }
     
     .blocked-msg {
@@ -194,7 +197,7 @@ st.markdown("""
     .signals-header {
         text-align: center;
         color: #FFDA47;
-        font-family: 'Crimson Pro', serif;
+        font-family: 'Spectral', serif;
         font-weight: 700;
         font-size: 22px;
         margin-top: 30px;
@@ -240,6 +243,7 @@ def load_leads():
         return pd.DataFrame(columns=["Timestamp", "Name", "Email", "URL", "Score", "Verdict", "AuditData", "Sent"])
 
 def save_lead(name, email, url, score, verdict, audit_data):
+    # 1. Save to Local CSV (Backup)
     df = load_leads()
     new_entry = {
         "Timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -253,6 +257,27 @@ def save_lead(name, email, url, score, verdict, audit_data):
     }
     df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
     df.to_csv(LEADS_FILE, index=False)
+
+    # 2. Send to GoHighLevel (Automation)
+    if "PASTE_YOUR_GHL" not in GHL_WEBHOOK_URL:
+        try:
+            payload = {
+                "name": name,
+                "email": email,
+                "website": url,
+                "customData": {
+                    "audit_score": score,
+                    "audit_verdict": verdict
+                },
+                "tags": ["Source: AI Audit App"]
+            }
+            # Add timeout to prevent app hanging if GHL is slow
+            requests.post(GHL_WEBHOOK_URL, json=payload, timeout=3)
+            print("Sent to GHL successfully")
+        except Exception as e:
+            print(f"GHL Webhook Failed: {e}")
+    else:
+        print("GHL Webhook not configured yet.")
 
 def update_leads(df):
     df.to_csv(LEADS_FILE, index=False)
@@ -400,8 +425,7 @@ def analyze_website(raw_url):
 # --- UI RENDER ---
 col1, col2, col3 = st.columns([1,2,1])
 with col2:
-    # UPDATED LOGO to use the .png raw link
-    st.image("https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.png", use_container_width=True)
+    st.image("https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.jpg", use_container_width=True)
 
 st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
 st.markdown("<div class='sub-head'>Is your business visible to Google, Apple, Siri, Alexa, and AI Search Agents?</div>", unsafe_allow_html=True)
@@ -457,7 +481,7 @@ if st.session_state.audit_data:
         """, unsafe_allow_html=True)
 
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#FFDA47; font-size:22px; text-align:center; font-weight:700; font-family:Crimson Pro, serif;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#FFDA47; font-size:22px; text-align:center; font-weight:700; font-family:Spectral, serif;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
     
     with st.form(key='email_form'):
         c1, c2 = st.columns(2)
