@@ -32,7 +32,7 @@ st.set_page_config(
 
 # --- GHL WEBHOOK CONFIGURATION ---
 # TODO: PASTE YOUR GHL WEBHOOK URL BELOW INSIDE THE QUOTES
-GHL_WEBHOOK_URL = "Webhook https://services.leadconnectorhq.com/hooks/8I4dcdbVv5h8XxnqQ9Cg/webhook-trigger/e8d9672c-0b9a-40f6-bc7a-aa93dd78ee99"
+GHL_WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/8I4dcdbVv5h8XxnqQ9Cg/webhook-trigger/e8d9672c-0b9a-40f6-bc7a-aa93dd78ee99"
 
 # --- SOCIAL META TAGS ---
 meta_tags = """
