@@ -37,11 +37,11 @@ GHL_WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/8I4dcdbVv5h8XxnqQ9
 meta_tags = """
 <meta property="og:title" content="Found By AI - Visibility Audit">
 <meta property="og:description" content="Is your business invisible to Siri, Alexa & Google? Check your AI Visibility Score now.">
-<meta property="og:image" content="https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.jpg">
+<meta property="og:image" content="https://placehold.co/1200x630/1A1F2A/FFDA47?text=Found+By+AI">
 <meta property="og:url" content="https://ai-visibility-audit.streamlit.app">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.jpg">
+<meta name="twitter:image" content="https://placehold.co/1200x630/1A1F2A/FFDA47?text=Found+By+AI">
 """
 st.markdown(meta_tags, unsafe_allow_html=True)
 
@@ -57,12 +57,7 @@ st.markdown("""
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
-    
-    /* Hide Streamlit Anchor Links */
-    [data-testid="stHeaderAction"] {
-        display: none !important;
-        visibility: hidden !important;
-    }
+    [data-testid="stHeaderAction"] {display: none !important;}
     
     /* Headers */
     h1 { 
@@ -70,7 +65,7 @@ st.markdown("""
         font-family: 'Spectral', serif !important; 
         font-weight: 800; 
         text-align: center; 
-        margin-top: 0px;
+        margin-top: 0px; 
         margin-bottom: 5px; 
         font-size: 3.5rem; 
         letter-spacing: -1px; 
@@ -98,40 +93,42 @@ st.markdown("""
         margin-right: auto;
     }
 
-    /* --- FINAL BUTTON FIX (TARGETING FORM SUBMIT ONLY) --- */
-    
-    /* Target specifically the "Run Audit" and "Email Me" buttons */
-    [data-testid="stFormSubmitButton"] > button {
+    /* --- UNIVERSAL BUTTON FIX --- */
+    /* Target EVERY button component in Streamlit */
+    .stButton > button {
         background-color: #FFDA47 !important; 
         color: #000000 !important;
         font-weight: 900 !important; 
-        border-radius: 8px !important; 
         border: none !important; 
-        height: 50px !important; 
-        width: 100% !important; 
-        font-size: 16px !important; 
-        text-transform: uppercase !important; 
-        letter-spacing: 1px !important; 
-        transition: transform 0.1s ease-in-out !important; 
-        font-family: 'Inter', sans-serif !important; 
+        border-radius: 8px !important;
+        height: 50px !important;
+        width: 100% !important;
+        font-family: 'Inter', sans-serif !important;
     }
 
-    [data-testid="stFormSubmitButton"] > button:hover {
-        background-color: white !important; 
-        color: #000000 !important; 
-        transform: scale(1.02); 
-        box-shadow: 0 0 10px rgba(255, 218, 71, 0.5);
+    .stButton > button:hover {
+        background-color: #FFFFFF !important; 
+        color: #000000 !important;
+        transform: scale(1.02);
+        box-shadow: 0 0 15px rgba(255, 218, 71, 0.4);
     }
 
-    /* --- INPUT FIELD FIX (NAME/EMAIL) --- */
-    /* Forces high contrast for input fields so text is visible */
+    /* --- REMOVE GHOST BUTTONS FROM IMAGES --- */
+    /* Hide the fullscreen button on images specifically */
+    [data-testid="StyledFullScreenButton"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    /* --- INPUT FIELD VISIBILITY --- */
+    /* Dark background, White text */
     input.stTextInput {
         background-color: #2D3342 !important;
         color: #FFFFFF !important;
         border: 1px solid #4A5568 !important;
     }
     
-    /* --- HTML LINK BUTTONS --- */
+    /* --- LINK BUTTONS --- */
     .amber-btn {
         display: block;
         background-color: #FFDA47;
@@ -150,7 +147,6 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
         margin-bottom: 0px;
         transition: transform 0.1s ease-in-out;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     }
     .amber-btn:hover {
         background-color: white;
@@ -167,7 +163,6 @@ st.markdown("""
         margin-top: 10px; 
         margin-bottom: 20px; 
         border: 1px solid #3E4658; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
     }
     .score-circle { 
         font-size: 36px !important; 
@@ -190,7 +185,6 @@ st.markdown("""
         margin-top: 5px; 
         font-family: 'Spectral', serif; 
     }
-    
     .blocked-msg {
         color: #FFDA47;
         font-size: 16px;
@@ -203,27 +197,6 @@ st.markdown("""
         border: 1px solid #FFDA47;
         text-align: center;
     }
-    
-    .tripwire-box { 
-        background: linear-gradient(135deg, #0B3C5D 0%, #1A1F2A 100%); 
-        border: 2px solid #FFDA47; 
-        border-radius: 12px; 
-        padding: 20px; 
-        margin-top: 10px; 
-        margin-bottom: 20px;
-        text-align: center; 
-    }
-    
-    .signals-header {
-        text-align: center;
-        color: #FFDA47;
-        font-family: 'Spectral', serif;
-        font-weight: 700;
-        font-size: 22px;
-        margin-top: 30px;
-        margin-bottom: 20px;
-        letter-spacing: 0.5px;
-    }
     .signal-item {
         background-color: #2D3342;
         padding: 10px;
@@ -234,16 +207,6 @@ st.markdown("""
         color: #E0E0E0;
         border-left: 3px solid #28A745;
     }
-    
-    /* Admin Panel Styles */
-    .admin-box {
-        border: 1px solid #444;
-        padding: 15px;
-        border-radius: 5px;
-        background-color: #222;
-        margin-top: 50px;
-    }
-    
     </style>
 """, unsafe_allow_html=True)
 
@@ -257,7 +220,7 @@ def load_leads():
         return pd.DataFrame(columns=["Timestamp", "Name", "Email", "URL", "Score", "Verdict", "AuditData", "Sent"])
 
 def save_lead(name, email, url, score, verdict, audit_data):
-    # 1. Save to Local CSV (Backup)
+    # 1. Save to Local CSV
     df = load_leads()
     new_entry = {
         "Timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -272,7 +235,7 @@ def save_lead(name, email, url, score, verdict, audit_data):
     df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
     df.to_csv(LEADS_FILE, index=False)
 
-    # 2. Send to GoHighLevel (Automation)
+    # 2. Send to GoHighLevel
     if "PASTE_YOUR_GHL" not in GHL_WEBHOOK_URL:
         try:
             payload = {
@@ -285,11 +248,10 @@ def save_lead(name, email, url, score, verdict, audit_data):
                 },
                 "tags": ["Source: AI Audit App"]
             }
-            # Increased timeout to 5s
+            # Timeout 5s
             response = requests.post(GHL_WEBHOOK_URL, json=payload, timeout=5)
             
-            # Check response status
-            if response.status_code == 200 or response.status_code == 201:
+            if response.status_code in [200, 201]:
                 st.success(f"System: Data sent to GHL successfully (Status: {response.status_code})")
                 print(f"GHL Success: {response.status_code}")
             else:
@@ -313,7 +275,6 @@ if PDF_AVAILABLE:
             self.set_font('Arial', 'B', 15)
             self.cell(0, 10, 'Found By AI - Visibility Report', 0, 1, 'C')
             self.ln(10)
-
         def footer(self):
             self.set_y(-15)
             self.set_font('Arial', 'I', 8)
@@ -322,30 +283,21 @@ if PDF_AVAILABLE:
     def create_download_pdf(data, url):
         pdf = PDF()
         pdf.add_page()
-        
-        # Title
         pdf.set_font("Arial", "B", 24)
         pdf.cell(0, 10, f"Audit Score: {data['score']}/100", 0, 1, 'C')
         pdf.set_font("Arial", "B", 14)
         pdf.set_text_color(100, 100, 100)
         pdf.cell(0, 10, f"Site: {url}", 0, 1, 'C')
         pdf.ln(10)
-        
-        # Verdict
         pdf.set_font("Arial", "B", 16)
         pdf.set_text_color(0, 0, 0)
         pdf.cell(0, 10, f"Verdict: {data['verdict']}", 0, 1, 'L')
-        
-        # Explanation
         pdf.set_font("Arial", "", 12)
         pdf.multi_cell(0, 10, data['summary'])
         pdf.ln(10)
-        
-        # Hidden Breakdown
         pdf.set_font("Arial", "B", 14)
         pdf.cell(0, 10, "Technical Breakdown", 0, 1, 'L')
         pdf.ln(5)
-        
         pdf.set_font("Arial", "", 12)
         for criterion, details in data['breakdown'].items():
             status = "PASS" if details['points'] == details['max'] else "FAIL"
@@ -353,28 +305,15 @@ if PDF_AVAILABLE:
             pdf.set_font("Arial", "I", 10)
             pdf.cell(0, 10, f"   Note: {details['note']}", 0, 1)
         pdf.ln(10)
-        
-        # Educational Content
-        pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, "Why Your Score Matters", 0, 1, 'L')
-        pdf.ln(5)
-        
-        pdf.set_font("Arial", "", 11)
         education_text = """
-        1. The Firewall Problem (Siri & Alexa): 
-        If your site blocks our scanner, it likely blocks Siri and Alexa too. These agents need to 'read' your site to answer questions like 'What services do you offer?'.
-        
-        2. Schema Markup:
-        This is the hidden language of AI. Without it, you are just text. With it, you are a verified entity.
-        
-        3. Accessibility:
-        AI models prioritize sites that are accessible to screen readers. If a blind user can't read your site, AI won't recommend it.
+        1. The Firewall Problem: Blocks AI scanners like Siri/Alexa.
+        2. Schema Markup: The hidden language of AI verification.
+        3. Accessibility: Critical for AI prioritization.
         """
         pdf.multi_cell(0, 8, education_text)
-        
         return pdf.output(dest='S').encode('latin-1')
 
-# --- ENGINES (Smart Connect & Fallback) ---
+# --- ENGINES ---
 def fallback_analysis(url):
     clean_url = url.replace("https://", "").replace("http://", "").replace("www.", "")
     domain_hash = int(hashlib.sha256(clean_url.encode('utf-8')).hexdigest(), 16)
@@ -390,7 +329,7 @@ def fallback_analysis(url):
         "status": "blocked",
         "verdict": "AI VISIBILITY RESTRICTED",
         "color": "#FFDA47", 
-        "summary": "Your firewall is blocking AI scanners. This prevents Voice Agents from reading your data.",
+        "summary": "Your firewall is blocking AI scanners.",
         "breakdown": breakdown
     }
 
@@ -449,7 +388,8 @@ def analyze_website(raw_url):
 # --- UI RENDER ---
 col1, col2, col3 = st.columns([1,2,1])
 with col2:
-    st.image("https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.jpg", use_container_width=True)
+    # UPDATED: Placeholder image to remove the "0" glitch
+    st.image("https://placehold.co/600x400/1A1F2A/FFDA47?text=Found+By+AI", use_container_width=True)
 
 st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
 st.markdown("<div class='sub-head'>Is your business visible to Google, Apple, Siri, Alexa, and AI Search Agents?</div>", unsafe_allow_html=True)
@@ -466,7 +406,7 @@ with st.form(key='audit_form'):
     with col2:
         submit = st.form_submit_button(label='RUN THE AUDIT')
 
-# --- 8 SIGNALS SECTION (Only shown before Audit) ---
+# --- 8 SIGNALS SECTION ---
 if not st.session_state.audit_data:
     st.markdown("<div class='explainer-text'>Is your site blocking AI scanners? Are you visible to Google, Apple, and Alexa voice agents?<br><strong>Find out how visible you really are.</strong></div>", unsafe_allow_html=True)
     st.markdown("<div class='signals-header'>8 Critical Signals Required for AI Visibility</div>", unsafe_allow_html=True)
@@ -487,7 +427,6 @@ if st.session_state.audit_data:
     data = st.session_state.audit_data
     score_color = data.get("color", "#FFDA47")
     
-    # 1. COMPACT SCORE CARD
     html_score_card = f"""
     <div class="score-container" style="border-top: 5px solid {score_color};">
         <div class="score-label">AI VISIBILITY SCORE</div>
@@ -523,7 +462,6 @@ if st.session_state.audit_data:
         if get_pdf:
             if name and email and "@" in email:
                 save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
-                # Success message will be shown by save_lead function
                 if not PDF_AVAILABLE:
                     st.error("Note: PDF Generation is currently disabled. Check requirements.txt")
             else:
