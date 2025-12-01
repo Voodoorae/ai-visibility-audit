@@ -58,12 +58,10 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Hide Anchor Links on Headers */
-    .stMarkdown h1 a, .stMarkdown h2 a, .stMarkdown h3 a {
+    /* Hide Streamlit Anchor Links (The chain icon next to headers) */
+    [data-testid="stHeaderAction"] {
         display: none !important;
-    }
-    a.anchor-link {
-        display: none !important;
+        visibility: hidden !important;
     }
     
     /* Headers */
@@ -100,8 +98,9 @@ st.markdown("""
         margin-right: auto;
     }
 
-    /* Buttons */
-    button {
+    /* Buttons - UPDATED TO BE SPECIFIC */
+    /* Only target buttons inside Streamlit's button container, NOT global buttons (which affects images) */
+    .stButton > button {
         background-color: #FFDA47 !important; 
         color: #000000 !important;
         font-weight: 900 !important; 
@@ -116,7 +115,7 @@ st.markdown("""
         font-family: 'Inter', sans-serif !important; 
     }
 
-    button:hover {
+    .stButton > button:hover {
         background-color: white !important; 
         color: #000000 !important; 
         transform: scale(1.02); 
