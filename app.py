@@ -31,11 +31,10 @@ st.set_page_config(
 )
 
 # --- GHL WEBHOOK CONFIGURATION ---
-# CLEANED: Removed Markdown artifacts
+# CLEANED: Plain URL string
 GHL_WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/8I4dcdbVv5h8XxnqQ9Cg/webhook-trigger/e8d9672c-0b9a-40f6-bc7a-aa93dd78ee99"
 
 # --- SOCIAL META TAGS ---
-# CLEANED: Removed Markdown artifacts
 meta_tags = """
 <meta property="og:title" content="Found By AI - Visibility Audit">
 <meta property="og:description" content="Is your business invisible to Siri, Alexa & Google? Check your AI Visibility Score now.">
@@ -48,7 +47,6 @@ meta_tags = """
 st.markdown(meta_tags, unsafe_allow_html=True)
 
 # --- CUSTOM CSS ---
-# CLEANED: Removed Markdown artifacts from @import
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;800&display=swap');
@@ -332,9 +330,9 @@ if PDF_AVAILABLE:
         
         # Hidden Breakdown
         pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, ""Technical Breakdown", 0, 1, 'L')
+        pdf.cell(0, 10, "Technical Breakdown", 0, 1, 'L')
         pdf.ln(5)
-    
+        
         pdf.set_font("Arial", "", 12)
         for criterion, details in data['breakdown'].items():
             status = "PASS" if details['points'] == details['max'] else "FAIL"
