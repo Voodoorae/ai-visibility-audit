@@ -332,7 +332,9 @@ if PDF_AVAILABLE:
         
         # Hidden Breakdown
         pdf.set_font("Arial", "B", 14)
-        pdf.cell(0, 10, "
+        pdf.cell(0, 10, ""Technical Breakdown", 0, 1, 'L')
+        pdf.ln(5)
+    
         pdf.set_font("Arial", "", 12)
         for criterion, details in data['breakdown'].items():
             status = "PASS" if details['points'] == details['max'] else "FAIL"
