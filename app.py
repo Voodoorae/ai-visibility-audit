@@ -407,4 +407,81 @@ def analyze_website(raw_url):
         acc_score = 20 if total_imgs == 0 or (imgs_with_alt / total_imgs) > 0.8 else 0
         results["breakdown"]["Accessibility"] = {"points": acc_score, "max": 20, "note": "Checked Alt Tags."}
         score += acc_score
-        headers
+        headers_h = soup.find_all(['h1', 'h2', 'h3'])
+        q_words = ['how', 'cost', 'price', 'where', 'faq']
+        has_questions = any(any(q in h.get_text().lower() for q in q_words) for h in headers_h)
+        voice_score = 20 if has_questions else 0
+        results["breakdown"]["Voice Search"] = {"points": voice_score, "max": 20, "note": "Checked Headers."}
+        score += voice_score
+        schemas = soup.find_all('script', type='application/ld+json')
+        schema_score = 20 if len(schemas) > 0 else 0
+        results["breakdown"]["Schema Code"] = {"points": schema_score, "max": 20, "note": "Checked JSON-LD."}
+        score += schema_score
+        phone = re.search(r"(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}", text)
+        loc_score = 20 if phone else 5
+        results["breakdown"]["Local Signals"] = {"points": loc_score, "max": 20, "note": "Checked Phone."}
+        score += loc_score
+        current_year = str(datetime.datetime.now().year)
+        fresh_score = 20 if current_year in text else 0
+        results["breakdown"]["Freshness"] = {"points": fresh_score, "max": 20, "note": "Checked Copyright."}
+        score += fresh_score
+        results["score"] = score
+        if score < 60: results["verdict"], results["color"], results["summary"] = "INVISIBLE TO AI", "#FF4B4B", "Your site is failing core visibility checks."
+        elif score < 81: results["verdict"], results["color"], results["summary"] = "PARTIALLY VISIBLE", "#FFDA47", "You are visible, but not optimized."
+        else: results["verdict"], results["color"], results["summary"] = "AI READY", "#28A745", "Excellent work."
+        return results
+    except Exception: return fallback_analysis(raw_url)
+
+# --- UI RENDER ---
+col1, col2, col3 = st.columns([1,2,1])
+with col2:
+    st.image("https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.jpg", use_container_width=True)
+
+st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
+st.markdown("<div class='sub-head'>Is your business visible to Google, Apple, Siri, Alexa, and AI Search Agents?</div>", unsafe_allow_html=True)
+
+if "audit_data" not in st.session_state:
+    st.session_state.audit_data = None
+if "url_input" not in st.session_state:
+    st.session_state.url_input = ""
+
+with st.form(key='audit_form'):
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        url = st.text_input("Enter Website URL", placeholder="e.g. plumber-marketing.com", label_visibility="collapsed", key="url_field")
+    with col2:
+        submit = st.form_submit_button(label='RUN THE AUDIT')
+
+# --- 8 SIGNALS SECTION (Only shown before Audit) ---
+if not st.session_state.audit_data:
+    st.markdown("<div class='explainer-text'>Is your site blocking AI scanners? Are you visible to Google, Apple, and Alexa voice agents?<br><strong>Find out how visible you really are.</strong></div>", unsafe_allow_html=True)
+    st.markdown("<div class='signals-header'>8 Critical Signals Required for AI Visibility</div>", unsafe_allow_html=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        for sig in ["Voice Assistant Readiness", "AI Crawler Access", "Schema Markup", "Content Freshness"]: st.markdown(f"<div class='signal-item'>✅ {sig}</div>", unsafe_allow_html=True)
+    with col2:
+        for sig in ["Accessibility Compliance", "SSL Security", "Mobile Readiness", "Entity Clarity"]: st.markdown(f"<div class='signal-item'>✅ {sig}</div>", unsafe_allow_html=True)
+
+if submit and url:
+    st.session_state.url_input = url
+    with st.spinner("Scanning..."):
+        time.sleep(1)
+        st.session_state.audit_data = analyze_website(url)
+        st.rerun()
+
+if st.session_state.audit_data:
+    data = st.session_state.audit_data
+    score_color = data.get("color", "#FFDA47")
+    
+    # 1. COMPACT SCORE CARD
+    st.markdown(f"""
+    <div class="score-container" style="border-top: 5px solid {score_color};">
+        <div class="score-label">AI VISIBILITY SCORE</div>
+        <div class="score-circle">{data['score']}/100</div>
+        <div class="verdict-text" style="color: {score_color};">{data['verdict']}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if data["status"] == "blocked":
+        st.markdown(f"""
+        <div class="blocked
