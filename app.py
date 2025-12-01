@@ -31,7 +31,6 @@ st.set_page_config(
 )
 
 # --- GHL WEBHOOK CONFIGURATION ---
-# TODO: PASTE YOUR GHL WEBHOOK URL BELOW INSIDE THE QUOTES
 GHL_WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/8I4dcdbVv5h8XxnqQ9Cg/webhook-trigger/e8d9672c-0b9a-40f6-bc7a-aa93dd78ee99"
 
 # --- SOCIAL META TAGS ---
@@ -259,6 +258,7 @@ def save_lead(name, email, url, score, verdict, audit_data):
     df.to_csv(LEADS_FILE, index=False)
 
     # 2. Send to GoHighLevel (Automation)
+    # UPDATED: Added Visual Debugging
     if "PASTE_YOUR_GHL" not in GHL_WEBHOOK_URL:
         try:
             payload = {
@@ -271,10 +271,20 @@ def save_lead(name, email, url, score, verdict, audit_data):
                 },
                 "tags": ["Source: AI Audit App"]
             }
-            # Add timeout to prevent app hanging if GHL is slow
-            requests.post(GHL_WEBHOOK_URL, json=payload, timeout=3)
-            print("Sent to GHL successfully")
+            # Increased timeout to 5s
+            response = requests.post(GHL_WEBHOOK_URL, json=payload, timeout=5)
+            
+            # Check response status
+            if response.status_code == 200 or response.status_code == 201:
+                st.toast("System: Data sent to GHL successfully", icon="✅")
+                print(f"GHL Success: {response.status_code}")
+            else:
+                st.error(f"GHL Error: Received Status Code {response.status_code}")
+                st.write(f"GHL Message: {response.text}")
+                print(f"GHL Failed with {response.status_code}")
+                
         except Exception as e:
+            st.error(f"Connection Error to GHL: {e}")
             print(f"GHL Webhook Failed: {e}")
     else:
         print("GHL Webhook not configured yet.")
@@ -397,186 +407,4 @@ def analyze_website(raw_url):
         acc_score = 20 if total_imgs == 0 or (imgs_with_alt / total_imgs) > 0.8 else 0
         results["breakdown"]["Accessibility"] = {"points": acc_score, "max": 20, "note": "Checked Alt Tags."}
         score += acc_score
-        headers_h = soup.find_all(['h1', 'h2', 'h3'])
-        q_words = ['how', 'cost', 'price', 'where', 'faq']
-        has_questions = any(any(q in h.get_text().lower() for q in q_words) for h in headers_h)
-        voice_score = 20 if has_questions else 0
-        results["breakdown"]["Voice Search"] = {"points": voice_score, "max": 20, "note": "Checked Headers."}
-        score += voice_score
-        schemas = soup.find_all('script', type='application/ld+json')
-        schema_score = 20 if len(schemas) > 0 else 0
-        results["breakdown"]["Schema Code"] = {"points": schema_score, "max": 20, "note": "Checked JSON-LD."}
-        score += schema_score
-        phone = re.search(r"(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}", text)
-        loc_score = 20 if phone else 5
-        results["breakdown"]["Local Signals"] = {"points": loc_score, "max": 20, "note": "Checked Phone."}
-        score += loc_score
-        current_year = str(datetime.datetime.now().year)
-        fresh_score = 20 if current_year in text else 0
-        results["breakdown"]["Freshness"] = {"points": fresh_score, "max": 20, "note": "Checked Copyright."}
-        score += fresh_score
-        results["score"] = score
-        if score < 60: results["verdict"], results["color"], results["summary"] = "INVISIBLE TO AI", "#FF4B4B", "Your site is failing core visibility checks."
-        elif score < 81: results["verdict"], results["color"], results["summary"] = "PARTIALLY VISIBLE", "#FFDA47", "You are visible, but not optimized."
-        else: results["verdict"], results["color"], results["summary"] = "AI READY", "#28A745", "Excellent work."
-        return results
-    except Exception: return fallback_analysis(raw_url)
-
-# --- UI RENDER ---
-col1, col2, col3 = st.columns([1,2,1])
-with col2:
-    st.image("https://raw.githubusercontent.com/Voodoorae/ai-visibility-audit/main/Gemini_Generated_Image_tzlldqtzlldqtzll.jpg", use_container_width=True)
-
-st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
-st.markdown("<div class='sub-head'>Is your business visible to Google, Apple, Siri, Alexa, and AI Search Agents?</div>", unsafe_allow_html=True)
-
-if "audit_data" not in st.session_state:
-    st.session_state.audit_data = None
-if "url_input" not in st.session_state:
-    st.session_state.url_input = ""
-
-with st.form(key='audit_form'):
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        url = st.text_input("Enter Website URL", placeholder="e.g. plumber-marketing.com", label_visibility="collapsed", key="url_field")
-    with col2:
-        submit = st.form_submit_button(label='RUN THE AUDIT')
-
-# --- 8 SIGNALS SECTION (Only shown before Audit) ---
-if not st.session_state.audit_data:
-    st.markdown("<div class='explainer-text'>Is your site blocking AI scanners? Are you visible to Google, Apple, and Alexa voice agents?<br><strong>Find out how visible you really are.</strong></div>", unsafe_allow_html=True)
-    st.markdown("<div class='signals-header'>8 Critical Signals Required for AI Visibility</div>", unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        for sig in ["Voice Assistant Readiness", "AI Crawler Access", "Schema Markup", "Content Freshness"]: st.markdown(f"<div class='signal-item'>✅ {sig}</div>", unsafe_allow_html=True)
-    with col2:
-        for sig in ["Accessibility Compliance", "SSL Security", "Mobile Readiness", "Entity Clarity"]: st.markdown(f"<div class='signal-item'>✅ {sig}</div>", unsafe_allow_html=True)
-
-if submit and url:
-    st.session_state.url_input = url
-    with st.spinner("Scanning..."):
-        time.sleep(1)
-        st.session_state.audit_data = analyze_website(url)
-        st.rerun()
-
-if st.session_state.audit_data:
-    data = st.session_state.audit_data
-    score_color = data.get("color", "#FFDA47")
-    
-    # 1. COMPACT SCORE CARD
-    st.markdown(f"""
-    <div class="score-container" style="border-top: 5px solid {score_color};">
-        <div class="score-label">AI VISIBILITY SCORE</div>
-        <div class="score-circle">{data['score']}/100</div>
-        <div class="verdict-text" style="color: {score_color};">{data['verdict']}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if data["status"] == "blocked":
-        st.markdown(f"""
-        <div class="blocked-msg">
-            We could verify your domain, but your firewall blocked our content scanner.<br>
-            <strong>If we are blocked, Siri & Alexa likely are too.</strong>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#FFDA47; font-size:22px; text-align:center; font-weight:700; font-family:Spectral, serif;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
-    
-    with st.form(key='email_form'):
-        c1, c2 = st.columns(2)
-        with c1:
-            name = st.text_input("Name", placeholder="Your Name")
-        with c2:
-            email = st.text_input("Email", placeholder="name@company.com")
-        
-        b1, b2, b3 = st.columns([1, 2, 1])
-        with b2:
-            get_pdf = st.form_submit_button("EMAIL ME MY FOUND SCORE ANALYSIS")
-        
-        if get_pdf:
-            if name and email and "@" in email:
-                save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
-                st.markdown(f"<p style='color: white; font-weight: bold; text-align: center; background-color: #28a745; padding: 10px; border-radius: 5px;'>Success! Your report is being generated and will be emailed to {email} shortly.</p>", unsafe_allow_html=True)
-                if not PDF_AVAILABLE:
-                    st.error("Note: PDF Generation is currently disabled. Check requirements.txt")
-            else:
-                st.error("Please enter your name and valid email.")
-
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: #FFDA47; margin-bottom: 5px;'>UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>", unsafe_allow_html=True)
-    st.markdown("""
-    <p style='text-align: center; color: #fff; margin-bottom: 20px; font-size: 16px; line-height: 1.6;'>
-        You are missing critical AI signals.<br>
-        Get the <strong style='color: #FFDA47;'>Fast Fix Toolkit</strong> to unlock your visibility<br>
-        or get the <strong style='color: #FFDA47;'>Done For You Tune Up</strong> for a fast, hands off full fix.
-    </p>
-    """, unsafe_allow_html=True)
-    
-    b_col1, b_col2 = st.columns(2)
-    with b_col1:
-        st.markdown("""<a href="https://your-checkout-link-toolkit.com" target="_blank" class="amber-btn">FAST FIX TOOLKIT £27</a>""", unsafe_allow_html=True)
-    with b_col2:
-        st.markdown("""<a href="https://your-checkout-link-tuneup.com" target="_blank" class="amber-btn">BOOK TUNE UP £150</a>""", unsafe_allow_html=True)
-
-    st.markdown("""
-    <div style='background-color: #2D3342; padding: 20px; border-radius: 8px; margin-top: 30px; margin-bottom: 20px;'>
-        <div style='margin-bottom: 10px;'>✅ <strong>The Unblocker Guide:</strong> Remove AI crawler blockages.</div>
-        <div style='margin-bottom: 10px;'>✅ <strong>Accessibility Tags:</strong> Rank for Voice Search.</div>
-        <div style='margin-bottom: 10px;'>✅ <strong>Schema Generator:</strong> Tell AI exactly what you do.</div>
-        <div style='margin-bottom: 10px;'>✅ <strong>Copyright Script:</strong> Auto-update for Freshness.</div>
-        <div>✅ <strong>Privacy & GDPR:</strong> Build Trust with Agents.</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
-    
-    c1, c2, c3 = st.columns([1, 1, 1])
-    
-    def clear_form():
-        st.session_state.audit_data = None
-        st.session_state.url_input = ""
-        st.session_state.url_field = ""
-        
-    with c2:
-        st.button("🔄 START A NEW AUDIT", on_click=clear_form)
-
-# --- ADMIN PANEL ---
-if "admin_unlocked" not in st.session_state:
-    st.session_state.admin_unlocked = False
-
-with st.expander("Admin Panel (Restricted)"):
-    if not st.session_state.admin_unlocked:
-        password = st.text_input("Enter Admin Password", type="password", key="admin_pw_input")
-        if password == "318345":
-            st.session_state.admin_unlocked = True
-            st.rerun()
-    
-    if st.session_state.admin_unlocked:
-        st.success("Access Granted")
-        df = load_leads()
-        edited_df = st.data_editor(df, num_rows="dynamic")
-        
-        if st.button("Update Status"):
-            update_leads(edited_df)
-            st.success("Database Updated")
-            
-        st.download_button(label="Download CSV", data=edited_df.to_csv(index=False).encode('utf-8'), file_name='leads.csv', mime='text/csv')
-        
-        if not df.empty:
-            st.write("### Regenerate Client PDF")
-            selected_row = st.selectbox("Select Lead to Generate PDF", df.index, format_func=lambda x: f"{df.iloc[x]['Name']} - {df.iloc[x]['URL']}")
-            if st.button("Generate & Download PDF"):
-                try:
-                    row = df.iloc[selected_row]
-                    audit_data_raw = row['AuditData']
-                    if isinstance(audit_data_raw, str): audit_data = json.loads(audit_data_raw)
-                    else: audit_data = audit_data_raw
-                    pdf_bytes = create_download_pdf(audit_data, row['URL'])
-                    b64 = base64.b64encode(pdf_bytes).decode()
-                    href = f'<a href="data:application/octet-stream;base64,{b64}" download="Report_{row["Name"]}.pdf">Click to Download PDF</a>'
-                    st.markdown(href, unsafe_allow_html=True)
-                except Exception as e:
-                    st.error(f"Error: {e}")
-        else:
-            st.info("No leads captured yet.")
+        headers
