@@ -93,9 +93,22 @@ st.markdown("""
         margin-right: auto;
     }
 
-    /* --- UNIVERSAL BUTTON FIX --- */
-    /* Target EVERY button component in Streamlit */
-    .stButton > button {
+    /* --- ULTIMATE BUTTON FIX --- */
+    /* Target every specific button container type by ID to ensure coverage */
+    
+    /* 1. Standard Buttons (Start New Audit) */
+    div[data-testid="stButton"] > button {
+        background-color: #FFDA47 !important; 
+        color: #000000 !important;
+        font-weight: 900 !important; 
+        border: none !important; 
+        border-radius: 8px !important;
+        height: 50px !important;
+        font-family: 'Inter', sans-serif !important;
+    }
+
+    /* 2. Form Submit Buttons (Run Audit, Email Me) */
+    div[data-testid="stFormSubmitButton"] > button {
         background-color: #FFDA47 !important; 
         color: #000000 !important;
         font-weight: 900 !important; 
@@ -105,8 +118,21 @@ st.markdown("""
         width: 100% !important;
         font-family: 'Inter', sans-serif !important;
     }
+    
+    /* 3. Download Buttons (Admin) */
+    div[data-testid="stDownloadButton"] > button {
+        background-color: #FFDA47 !important; 
+        color: #000000 !important;
+        font-weight: 900 !important; 
+        border: none !important; 
+        border-radius: 8px !important;
+        font-family: 'Inter', sans-serif !important;
+    }
 
-    .stButton > button:hover {
+    /* Hover State for ALL Buttons */
+    div[data-testid="stButton"] > button:hover,
+    div[data-testid="stFormSubmitButton"] > button:hover,
+    div[data-testid="stDownloadButton"] > button:hover {
         background-color: #FFFFFF !important; 
         color: #000000 !important;
         transform: scale(1.02);
