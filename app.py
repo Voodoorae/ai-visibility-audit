@@ -98,10 +98,10 @@ st.markdown("""
         margin-right: auto;
     }
 
-    /* --- BUTTON STYLING FIX --- */
+    /* --- FINAL BUTTON FIX (TARGETING FORM SUBMIT ONLY) --- */
     
-    /* 1. Make ALL Streamlit buttons Yellow by default */
-    .stButton > button {
+    /* Target specifically the "Run Audit" and "Email Me" buttons */
+    [data-testid="stFormSubmitButton"] > button {
         background-color: #FFDA47 !important; 
         color: #000000 !important;
         font-weight: 900 !important; 
@@ -116,32 +116,22 @@ st.markdown("""
         font-family: 'Inter', sans-serif !important; 
     }
 
-    .stButton > button:hover {
+    [data-testid="stFormSubmitButton"] > button:hover {
         background-color: white !important; 
         color: #000000 !important; 
         transform: scale(1.02); 
-        border: none !important;
+        box-shadow: 0 0 10px rgba(255, 218, 71, 0.5);
     }
 
-    /* 2. SPECIFIC OVERRIDE: Force the Image Fullscreen Button to be Transparent */
-    /* We use !important to override the rule above */
-    button[title="View fullscreen"], [data-testid="StyledFullScreenButton"] {
-        background-color: transparent !important;
-        color: white !important;
-        border: none !important;
-        width: auto !important;
-        height: auto !important;
-        box-shadow: none !important;
+    /* --- INPUT FIELD FIX (NAME/EMAIL) --- */
+    /* Forces high contrast for input fields so text is visible */
+    input.stTextInput {
+        background-color: #2D3342 !important;
+        color: #FFFFFF !important;
+        border: 1px solid #4A5568 !important;
     }
     
-    /* Ensure hover doesn't turn it white */
-    button[title="View fullscreen"]:hover, [data-testid="StyledFullScreenButton"]:hover {
-        background-color: rgba(255, 255, 255, 0.2) !important;
-        color: white !important;
-        transform: none !important;
-    }
-    
-    /* HTML Link Buttons */
+    /* --- HTML LINK BUTTONS --- */
     .amber-btn {
         display: block;
         background-color: #FFDA47;
@@ -254,12 +244,6 @@ st.markdown("""
         margin-top: 50px;
     }
     
-    /* Form Input Fix */
-    .stTextInput > div > div > input {
-        background-color: #2D3342;
-        color: white;
-        border: 1px solid #4A5568;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -289,7 +273,6 @@ def save_lead(name, email, url, score, verdict, audit_data):
     df.to_csv(LEADS_FILE, index=False)
 
     # 2. Send to GoHighLevel (Automation)
-    # UPDATED: Added Visual Debugging (Persistent Success/Error)
     if "PASTE_YOUR_GHL" not in GHL_WEBHOOK_URL:
         try:
             payload = {
@@ -540,7 +523,7 @@ if st.session_state.audit_data:
         if get_pdf:
             if name and email and "@" in email:
                 save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
-                # Success Message rendered dynamically in the save_lead function
+                # Success message will be shown by save_lead function
                 if not PDF_AVAILABLE:
                     st.error("Note: PDF Generation is currently disabled. Check requirements.txt")
             else:
