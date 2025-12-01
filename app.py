@@ -31,6 +31,7 @@ st.set_page_config(
 )
 
 # --- GHL WEBHOOK CONFIGURATION ---
+# CLEANED: Plain URL string
 GHL_WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/8I4dcdbVv5h8XxnqQ9Cg/webhook-trigger/e8d9672c-0b9a-40f6-bc7a-aa93dd78ee99"
 
 # --- SOCIAL META TAGS ---
@@ -120,6 +121,21 @@ st.markdown("""
         color: #000000 !important; 
         transform: scale(1.02); 
         border: none !important;
+    }
+
+    /* ANTIDOTE: FORCE RESET IMAGE FULLSCREEN BUTTON */
+    /* This specifically targets the image popup button to remove the yellow styling */
+    [data-testid="StyledFullScreenButton"] {
+        background-color: transparent !important;
+        color: white !important;
+        border: none !important;
+        width: auto !important;
+        height: auto !important;
+        box-shadow: none !important;
+    }
+    [data-testid="StyledFullScreenButton"]:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        transform: none !important;
     }
     
     /* HTML Link Buttons */
