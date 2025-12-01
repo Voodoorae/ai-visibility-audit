@@ -31,7 +31,6 @@ st.set_page_config(
 )
 
 # --- GHL WEBHOOK CONFIGURATION ---
-# CLEANED: Plain URL string
 GHL_WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/8I4dcdbVv5h8XxnqQ9Cg/webhook-trigger/e8d9672c-0b9a-40f6-bc7a-aa93dd78ee99"
 
 # --- SOCIAL META TAGS ---
@@ -59,7 +58,7 @@ st.markdown("""
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Hide Streamlit Anchor Links (The chain icon next to headers) */
+    /* Hide Streamlit Anchor Links */
     [data-testid="stHeaderAction"] {
         display: none !important;
         visibility: hidden !important;
@@ -99,8 +98,9 @@ st.markdown("""
         margin-right: auto;
     }
 
-    /* Buttons - UPDATED TO BE SPECIFIC */
-    /* Only target buttons inside Streamlit's button container, NOT global buttons (which affects images) */
+    /* --- BUTTON STYLING FIX --- */
+    
+    /* 1. Make ALL Streamlit buttons Yellow by default */
     .stButton > button {
         background-color: #FFDA47 !important; 
         color: #000000 !important;
@@ -123,9 +123,9 @@ st.markdown("""
         border: none !important;
     }
 
-    /* ANTIDOTE: FORCE RESET IMAGE FULLSCREEN BUTTON */
-    /* This specifically targets the image popup button to remove the yellow styling */
-    [data-testid="StyledFullScreenButton"] {
+    /* 2. SPECIFIC OVERRIDE: Force the Image Fullscreen Button to be Transparent */
+    /* We use !important to override the rule above */
+    button[title="View fullscreen"], [data-testid="StyledFullScreenButton"] {
         background-color: transparent !important;
         color: white !important;
         border: none !important;
@@ -133,8 +133,11 @@ st.markdown("""
         height: auto !important;
         box-shadow: none !important;
     }
-    [data-testid="StyledFullScreenButton"]:hover {
-        background-color: rgba(255, 255, 255, 0.1) !important;
+    
+    /* Ensure hover doesn't turn it white */
+    button[title="View fullscreen"]:hover, [data-testid="StyledFullScreenButton"]:hover {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        color: white !important;
         transform: none !important;
     }
     
@@ -286,7 +289,7 @@ def save_lead(name, email, url, score, verdict, audit_data):
     df.to_csv(LEADS_FILE, index=False)
 
     # 2. Send to GoHighLevel (Automation)
-    # UPDATED: Added Visual Debugging
+    # UPDATED: Added Visual Debugging (Persistent Success/Error)
     if "PASTE_YOUR_GHL" not in GHL_WEBHOOK_URL:
         try:
             payload = {
@@ -304,7 +307,7 @@ def save_lead(name, email, url, score, verdict, audit_data):
             
             # Check response status
             if response.status_code == 200 or response.status_code == 201:
-                st.toast("System: Data sent to GHL successfully", icon="✅")
+                st.success(f"System: Data sent to GHL successfully (Status: {response.status_code})")
                 print(f"GHL Success: {response.status_code}")
             else:
                 st.error(f"GHL Error: Received Status Code {response.status_code}")
@@ -537,8 +540,7 @@ if st.session_state.audit_data:
         if get_pdf:
             if name and email and "@" in email:
                 save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
-                success_msg = f"<p style='color: white; font-weight: bold; text-align: center; background-color: #28a745; padding: 10px; border-radius: 5px;'>Success! Your report is being generated and will be emailed to {email} shortly.</p>"
-                st.markdown(success_msg, unsafe_allow_html=True)
+                # Success Message rendered dynamically in the save_lead function
                 if not PDF_AVAILABLE:
                     st.error("Note: PDF Generation is currently disabled. Check requirements.txt")
             else:
