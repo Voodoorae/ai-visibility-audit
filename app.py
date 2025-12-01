@@ -303,4 +303,4 @@ def save_lead(name, email, url, score, verdict, audit_data):
         print("GHL Webhook not configured yet.")
 
 def update_leads(df):
-    df.to_csv(LEADS_
+    df.to_csv(LEADS_)
