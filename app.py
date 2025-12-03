@@ -241,20 +241,28 @@ def save_lead(name, email, url, score, verdict, audit_data):
     # 2. Send to GoHighLevel
     if "PASTE_YOUR_GHL" not in GHL_WEBHOOK_URL:
         try:
+            # Generate Text Summary for Email Body
+            report_lines = []
+            if audit_data and 'breakdown' in audit_data:
+                for k, v in audit_data['breakdown'].items():
+                    report_lines.append(f"- {k}: {v['points']}/{v['max']} ({v['note']})")
+            report_summary = "\n".join(report_lines)
+
             payload = {
                 "name": name,
                 "email": email,
                 "website": url,
                 "customData": {
                     "audit_score": score,
-                    "audit_verdict": verdict
+                    "audit_verdict": verdict,
+                    "audit_report_text": report_summary
                 },
                 "tags": ["Source: AI Audit App"]
             }
             response = requests.post(GHL_WEBHOOK_URL, json=payload, timeout=5)
             
             if response.status_code in [200, 201]:
-                st.success(f"System: Data sent to GHL successfully (Status: {response.status_code})")
+                st.success(f"Success! Data sent to {email}.")
             else:
                 st.error(f"GHL Error: {response.status_code} - {response.text}")
                 
@@ -471,21 +479,9 @@ if st.session_state.audit_data:
         if get_pdf:
             if name and email and "@" in email:
                 save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
-                
-                # --- UPDATED SUCCESS MESSAGE WITH DOWNLOAD BUTTON ---
-                st.success(f"Success! Data sent. Check {email} for the link.")
-                
-                if PDF_AVAILABLE:
-                    try:
-                        # Generate the PDF immediately for direct download
-                        pdf_bytes = create_download_pdf(data, st.session_state.url_input, name)
-                        b64 = base64.b64encode(pdf_bytes).decode()
-                        href = f'<a href="data:application/octet-stream;base64,{b64}" download="Report_{name.replace(" ", "_")}.pdf" class="amber-btn" style="text-decoration:none; color:black; display:block; margin-top:10px;">⬇️ DOWNLOAD REPORT PDF NOW</a>'
-                        st.markdown(href, unsafe_allow_html=True)
-                    except Exception as e:
-                        st.error(f"Could not generate PDF: {e}")
-                # ----------------------------------------------------
-                
+                # Success message handling is done in save_lead
+                if not PDF_AVAILABLE:
+                    st.error("Note: PDF Generation is currently disabled. Check requirements.txt")
             else:
                 st.error("Please enter your name and valid email.")
 
@@ -503,7 +499,6 @@ if st.session_state.audit_data:
     with b_col1:
         st.markdown("""<a href="https://go.foundbyai.online/toolkit" target="_blank" class="amber-btn">FAST FIX TOOLKIT £27</a>""", unsafe_allow_html=True)
     with b_col2:
-        # FIXED: Replaced 'tune_up' with 'tune-up'
         st.markdown("""<a href="https://go.foundbyai.online/tune-up" target="_blank" class="amber-btn">BOOK TUNE UP £150</a>""", unsafe_allow_html=True)
 
     st.markdown("""
