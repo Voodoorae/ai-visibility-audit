@@ -34,7 +34,7 @@ st.set_page_config(
 GHL_WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/8I4dcdbVv5h8XxnqQ9Cg/webhook-trigger/e8d9672c-0b9a-40f6-bc7a-aa93dd78ee99"
 
 # --- SOCIAL META TAGS ---
-# TODO: Once you connect your domain (e.g. audit.foundbyai.online), update the URL below
+# TODO: Ensure your Streamlit Custom Domain is set to something like 'audit.foundbyai.online'
 meta_tags = """
 <meta property="og:title" content="Found By AI - Visibility Audit">
 <meta property="og:description" content="Is your business invisible to Siri, Alexa & Google? Check your AI Visibility Score now.">
@@ -95,7 +95,6 @@ st.markdown("""
     }
 
     /* --- ULTIMATE BUTTON FIX --- */
-    /* Forces ALL buttons to be Amber/Black and visible */
     div[data-testid="stButton"] > button, 
     div[data-testid="stFormSubmitButton"] > button,
     div[data-testid="stDownloadButton"] > button {
@@ -472,8 +471,21 @@ if st.session_state.audit_data:
         if get_pdf:
             if name and email and "@" in email:
                 save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
-                if not PDF_AVAILABLE:
-                    st.error("Note: PDF Generation is currently disabled. Check requirements.txt")
+                
+                # --- UPDATED SUCCESS MESSAGE WITH DOWNLOAD BUTTON ---
+                st.success(f"Success! Data sent. Check {email} for the link.")
+                
+                if PDF_AVAILABLE:
+                    try:
+                        # Generate the PDF immediately for direct download
+                        pdf_bytes = create_download_pdf(data, st.session_state.url_input, name)
+                        b64 = base64.b64encode(pdf_bytes).decode()
+                        href = f'<a href="data:application/octet-stream;base64,{b64}" download="Report_{name.replace(" ", "_")}.pdf" class="amber-btn" style="text-decoration:none; color:black; display:block; margin-top:10px;">⬇️ DOWNLOAD REPORT PDF NOW</a>'
+                        st.markdown(href, unsafe_allow_html=True)
+                    except Exception as e:
+                        st.error(f"Could not generate PDF: {e}")
+                # ----------------------------------------------------
+                
             else:
                 st.error("Please enter your name and valid email.")
 
@@ -491,7 +503,8 @@ if st.session_state.audit_data:
     with b_col1:
         st.markdown("""<a href="https://go.foundbyai.online/toolkit" target="_blank" class="amber-btn">FAST FIX TOOLKIT £27</a>""", unsafe_allow_html=True)
     with b_col2:
-        st.markdown("""<a href="https://go.foundbyai.online/tune_up" target="_blank" class="amber-btn">BOOK TUNE UP £150</a>""", unsafe_allow_html=True)
+        # FIXED: Replaced 'tune_up' with 'tune-up'
+        st.markdown("""<a href="https://go.foundbyai.online/tune-up" target="_blank" class="amber-btn">BOOK TUNE UP £150</a>""", unsafe_allow_html=True)
 
     st.markdown("""
     <div style='background-color: #2D3342; padding: 20px; border-radius: 8px; margin-top: 30px; margin-bottom: 20px;'>
