@@ -497,9 +497,10 @@ if st.session_state.audit_data:
     
     b_col1, b_col2 = st.columns(2)
     with b_col1:
-        st.markdown("""<a href="https://go.foundbyai.online/toolkit" target="_blank" class="amber-btn">FAST FIX TOOLKIT £27</a>""", unsafe_allow_html=True)
+        # EXACT NEW LINKS INSERTED HERE
+        st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">FAST FIX TOOLKIT £27</a>""", unsafe_allow_html=True)
     with b_col2:
-        st.markdown("""<a href="https://go.foundbyai.online/tune-up" target="_blank" class="amber-btn">BOOK TUNE UP £150</a>""", unsafe_allow_html=True)
+        st.markdown("""<a href="https://go.foundbyai.online/tune-up/page" target="_blank" class="amber-btn">BOOK TUNE UP £150</a>""", unsafe_allow_html=True)
 
     st.markdown("""
     <div style='background-color: #2D3342; padding: 20px; border-radius: 8px; margin-top: 30px; margin-bottom: 20px;'>
