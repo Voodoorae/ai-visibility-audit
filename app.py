@@ -47,6 +47,7 @@ meta_tags = """
 st.markdown(meta_tags, unsafe_allow_html=True)
 
 # --- CUSTOM CSS ---
+# Added fix for the link icon near the logo/image container
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;800&display=swap');
@@ -117,8 +118,9 @@ st.markdown("""
         box-shadow: 0 0 15px rgba(255, 218, 71, 0.4);
     }
 
-    /* --- REMOVE GHOST BUTTONS FROM IMAGES --- */
-    [data-testid="StyledFullScreenButton"] {
+    /* --- REMOVE GHOST BUTTONS FROM IMAGES & LINKS (NEW FIX) --- */
+    [data-testid="StyledFullScreenButton"], /* Hides fullscreen icon */
+    [data-testid="stImage"] a[target="_blank"] { /* Hides link icon next to image */
         display: none !important;
         visibility: hidden !important;
     }
@@ -341,7 +343,6 @@ def fallback_analysis(url):
     breakdown["Domain Authority"] = {"points": 10, "max": 15, "note": "⚠️ Domain is active and registered, score based on assumption."}
     
     # Components that are blocked (score = 0)
-    # New Max points used here for consistency: Schema (30), Voice (20), Accessibility (15), Freshness (15), Local (10), Canonical (10)
     breakdown["Schema Code"] = {"points": 0, "max": 30, "note": "❌ BLOCKED: AI cannot read content for schema. (CRITICAL)"}
     breakdown["Voice Search"] = {"points": 0, "max": 20, "note": "❌ BLOCKED: AI cannot read content for Q&A headers."}
     breakdown["Accessibility"] = {"points": 0, "max": 15, "note": "❌ BLOCKED: AI cannot read content for alt tags."}
@@ -374,7 +375,7 @@ def smart_connect(raw_url):
         except: continue
     raise ConnectionError("Connect failed")
 
-# --- NEW CANONICAL CHECK FUNCTION ---
+# --- CANONICAL CHECK FUNCTION ---
 def check_canonical_status(soup, working_url):
     canonical_tag = soup.find('link', rel='canonical')
     if canonical_tag and canonical_tag.get('href', '').strip().lower() == working_url.lower():
@@ -442,7 +443,7 @@ def analyze_website(raw_url):
         results["breakdown"]["Local Signals"] = {"points": loc_score, "max": 10, "note": "Checked for a phone number on the page."}
         score += loc_score
         
-        # --- VERDICT LOGIC (Score is now out of 75 for dynamic checks) ---
+        # --- VERDICT LOGIC ---
         
         # Add the fixed 25 points back for display purposes (Server Connectivity 15, SSL 10)
         final_score = score + 25 
@@ -467,6 +468,7 @@ def analyze_website(raw_url):
 # --- UI RENDER ---
 col1, col2, col3 = st.columns([1,2,1])
 with col2:
+    # This image is wrapped in a container, and the CSS above hides the default Streamlit link/fullscreen icons on it.
     if os.path.exists("logo.jpg"):
         st.image("logo.jpg", use_container_width=True)
 
@@ -496,8 +498,7 @@ if not st.session_state.audit_data:
         for sig in ["Accessibility Compliance", "SSL Security", "Mobile Readiness", "Entity Clarity"]: st.markdown(f"<div class='signal-item'>✅ {sig}</div>", unsafe_allow_html=True)
 
 if submit and url:
-    # --- INPUT VALIDATION (New) ---
-    # Simple regex to check for something that looks like a domain.
+    # --- INPUT VALIDATION ---
     if not re.match(r"^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$", url):
         st.error("Please enter a valid URL (e.g., example.com or https://example.com) to run the scan.")
         st.session_state.url_input = ""
@@ -556,80 +557,4 @@ if st.session_state.audit_data:
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
     st.markdown("<h3 style='text-align: center; color: #FFDA47; margin-bottom: 5px;'>UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>", unsafe_allow_html=True)
     st.markdown("""
-    <p style='text-align: center; color: #fff; margin-bottom: 20px; font-size: 16px; line-height: 1.6;'>
-        You are missing critical AI signals.<br>
-        Get the <strong style='color: #FFDA47;'>Fast Fix Toolkit</strong> to unlock your visibility<br>
-        or get the <strong style='color: #FFDA47;'>Done For You Tune Up</strong> for a fast, hands off full fix.
-    </p>
-    """, unsafe_allow_html=True)
-    
-    b_col1, b_col2 = st.columns(2)
-    with b_col1:
-        st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">FAST FIX TOOLKIT £27</a>""", unsafe_allow_html=True)
-    with b_col2:
-        st.markdown("""<a href="https://go.foundbyai.online/tune-up/page" target="_blank" class="amber-btn">BOOK TUNE UP £150</a>""", unsafe_allow_html=True)
-
-    st.markdown("""
-    <div style='background-color: #2D3342; padding: 20px; border-radius: 8px; margin-top: 30px; margin-bottom: 20px;'>
-        <div style='margin-bottom: 10px;'>✅ <strong>The Unblocker Guide:</strong> Remove AI crawler blockages.</div>
-        <div style='margin-bottom: 10px;'>✅ <strong>Accessibility Tags:</strong> Rank for Voice Search.</div>
-        <div style='margin-bottom: 10px;'>✅ <strong>Schema Generator:</strong> Tell AI exactly what you do.</div>
-        <div style='margin-bottom: 10px;'>✅ <strong>Copyright Script:</strong> Auto-update for Freshness.</div>
-        <div>✅ <strong>Privacy & GDPR:</strong> Build Trust with Agents.</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
-    
-    c1, c2, c3 = st.columns([1, 1, 1])
-    
-    def clear_form():
-        st.session_state.audit_data = None
-        st.session_state.url_input = ""
-        st.session_state.url_field = ""
-        
-    with c2:
-        st.button("🔄 START A NEW AUDIT", on_click=clear_form)
-
-# --- ADMIN PANEL ---
-if "admin_unlocked" not in st.session_state:
-    st.session_state.admin_unlocked = False
-
-with st.expander("Admin Panel (Restricted)"):
-    if not st.session_state.admin_unlocked:
-        password = st.text_input("Enter Admin Password", type="password", key="admin_pw_input")
-        if password == "318345":
-            st.session_state.admin_unlocked = True
-            st.rerun()
-    
-    if st.session_state.admin_unlocked:
-        st.success("Access Granted")
-        df = load_leads()
-        edited_df = st.data_editor(df, num_rows="dynamic")
-        
-        if st.button("Update Status"):
-            update_leads(edited_df)
-            st.success("Database Updated")
-            
-        st.download_button(label="Download CSV", data=edited_df.to_csv(index=False).encode('utf-8'), file_name='leads.csv', mime='text/csv')
-        
-        if not df.empty:
-            st.write("### Regenerate Client PDF")
-            selected_row = st.selectbox("Select Lead to Generate PDF", df.index, format_func=lambda x: f"{df.iloc[x]['Name']} - {df.iloc[x]['URL']}")
-            if st.button("Generate & Download PDF"):
-                try:
-                    row = df.iloc[selected_row]
-                    audit_data_raw = row['AuditData']
-                    if isinstance(audit_data_raw, str): audit_data = json.loads(audit_data_raw)
-                    else: audit_data = audit_data_raw
-                    # Pass Name to PDF
-                    pdf_bytes = create_download_pdf(audit_data, row['URL'], row['Name'])
-                    b64 = base64.b64encode(pdf_bytes).decode()
-                    href = f'<a href="data:application/octet-stream;base64,{b64}" download="Report_{row["Name"]}.pdf">Click to Download PDF</a>'
-                    st.markdown(href, unsafe_allow_html=True)
-                except Exception as e:
-                    st.error(f"Error: {e}")
-        else:
-            st.info("No leads captured yet.")
-
-# END OF FILE
+    <p style='text-align: center; color: #fff; margin-bottom: 20px; font-size:
