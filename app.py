@@ -47,7 +47,6 @@ meta_tags = """
 st.markdown(meta_tags, unsafe_allow_html=True)
 
 # --- CUSTOM CSS ---
-# Added fix for the link icon near the logo/image container
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;800&display=swap');
@@ -118,7 +117,7 @@ st.markdown("""
         box-shadow: 0 0 15px rgba(255, 218, 71, 0.4);
     }
 
-    /* --- REMOVE GHOST BUTTONS FROM IMAGES & LINKS (NEW FIX) --- */
+    /* --- REMOVE GHOST BUTTONS FROM IMAGES & LINKS --- */
     [data-testid="StyledFullScreenButton"], /* Hides fullscreen icon */
     [data-testid="stImage"] a[target="_blank"] { /* Hides link icon next to image */
         display: none !important;
@@ -274,6 +273,7 @@ def save_lead(name, email, url, score, verdict, audit_data):
     else:
         print("GHL Webhook not configured yet.")
 
+# Note: update_leads is only used in the removed Admin Panel, but kept for future CSV utility
 def update_leads(df):
     df.to_csv(LEADS_FILE, index=False)
 
@@ -343,6 +343,7 @@ def fallback_analysis(url):
     breakdown["Domain Authority"] = {"points": 10, "max": 15, "note": "⚠️ Domain is active and registered, score based on assumption."}
     
     # Components that are blocked (score = 0)
+    # New Max points used here for consistency: Schema (30), Voice (20), Accessibility (15), Freshness (15), Local (10), Canonical (10)
     breakdown["Schema Code"] = {"points": 0, "max": 30, "note": "❌ BLOCKED: AI cannot read content for schema. (CRITICAL)"}
     breakdown["Voice Search"] = {"points": 0, "max": 20, "note": "❌ BLOCKED: AI cannot read content for Q&A headers."}
     breakdown["Accessibility"] = {"points": 0, "max": 15, "note": "❌ BLOCKED: AI cannot read content for alt tags."}
@@ -436,125 +437,3 @@ def analyze_website(raw_url):
         can_points, can_max, can_note = check_canonical_status(soup, working_url)
         results["breakdown"]["Canonical Link"] = {"points": can_points, "max": can_max, "note": can_note}
         score += can_points
-
-        # 6. Local Signals (Max: 10) - PHONE NUMBER
-        phone = re.search(r"(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}", text)
-        loc_score = 10 if phone else 5 # Half points if no number is found, as we assume it exists on Google/Bing
-        results["breakdown"]["Local Signals"] = {"points": loc_score, "max": 10, "note": "Checked for a phone number on the page."}
-        score += loc_score
-        
-        # --- VERDICT LOGIC ---
-        
-        # Add the fixed 25 points back for display purposes (Server Connectivity 15, SSL 10)
-        final_score = score + 25 
-
-        if final_score < 60: 
-            results["verdict"], results["color"], results["summary"] = "INVISIBLE TO AI", "#FF4B4B", "Your site is failing core visibility checks. You are almost certainly being overlooked by modern AI search agents."
-        elif final_score < 81: 
-            results["verdict"], results["color"], results["summary"] = "PARTIALLY VISIBLE", "#FFDA47", "You are visible, but your site is missing critical Identity Chips and Voice Readiness signals. Optimization required."
-        else: 
-            results["verdict"], results["color"], results["summary"] = "AI READY", "#28A745", "Excellent work! Your website is technically ready for AI search agents and has the necessary Identity Chips."
-            
-        # Add fixed points to breakdown for PDF/GHL reporting
-        results["breakdown"]["Server Connectivity"] = {"points": 15, "max": 15, "note": "✅ Server responded successfully."}
-        results["breakdown"]["SSL Security"] = {"points": 10, "max": 10, "note": "✅ SSL Certificate valid."}
-        
-        results["score"] = final_score # Final score out of 100
-        
-        return results
-        
-    except Exception: return fallback_analysis(raw_url)
-
-# --- UI RENDER ---
-col1, col2, col3 = st.columns([1,2,1])
-with col2:
-    # This image is wrapped in a container, and the CSS above hides the default Streamlit link/fullscreen icons on it.
-    if os.path.exists("logo.jpg"):
-        st.image("logo.jpg", use_container_width=True)
-
-st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
-st.markdown("<div class='sub-head'>Is your business visible to Google, Apple, Siri, Alexa, and AI Search Agents?</div>", unsafe_allow_html=True)
-
-if "audit_data" not in st.session_state:
-    st.session_state.audit_data = None
-if "url_input" not in st.session_state:
-    st.session_state.url_input = ""
-
-with st.form(key='audit_form'):
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        url = st.text_input("Enter Website URL", placeholder="e.g. plumber-marketing.com", label_visibility="collapsed", key="url_field")
-    with col2:
-        submit = st.form_submit_button(label='RUN THE AUDIT')
-
-# --- 8 SIGNALS SECTION ---
-if not st.session_state.audit_data:
-    st.markdown("<div class='explainer-text'>Is your site blocking AI scanners? Are you visible to Google, Apple, and Alexa voice agents?<br><strong>Find out how visible you really are.</strong></div>", unsafe_allow_html=True)
-    st.markdown("<div class='signals-header'>8 Critical Signals Required for AI Visibility</div>", unsafe_allow_html=True)
-    col1, col2 = st.columns(2)
-    with col1:
-        for sig in ["Voice Assistant Readiness", "AI Crawler Access", "Schema Markup", "Content Freshness"]: st.markdown(f"<div class='signal-item'>✅ {sig}</div>", unsafe_allow_html=True)
-    with col2:
-        for sig in ["Accessibility Compliance", "SSL Security", "Mobile Readiness", "Entity Clarity"]: st.markdown(f"<div class='signal-item'>✅ {sig}</div>", unsafe_allow_html=True)
-
-if submit and url:
-    # --- INPUT VALIDATION ---
-    if not re.match(r"^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$", url):
-        st.error("Please enter a valid URL (e.g., example.com or https://example.com) to run the scan.")
-        st.session_state.url_input = ""
-    # --- END VALIDATION ---
-    else:
-        st.session_state.url_input = url
-        with st.spinner("Scanning..."):
-            time.sleep(1)
-            st.session_state.audit_data = analyze_website(url)
-            st.rerun()
-
-if st.session_state.audit_data:
-    data = st.session_state.audit_data
-    score_color = data.get("color", "#FFDA47")
-    
-    html_score_card = f"""
-    <div class="score-container" style="border-top: 5px solid {score_color};">
-        <div class="score-label">AI VISIBILITY SCORE</div>
-        <div class="score-circle">{data['score']}/100</div>
-        <div class="verdict-text" style="color: {score_color};">{data['verdict']}</div>
-    </div>
-    """
-    st.markdown(html_score_card, unsafe_allow_html=True)
-
-    if data["status"] == "blocked":
-        html_blocked_msg = f"""
-        <div class="blocked-msg">
-            We could verify your domain, but your firewall blocked our content scanner.<br>
-            <strong>If we are blocked, Siri & Alexa likely are too.</strong>
-        </div>
-        """
-        st.markdown(html_blocked_msg, unsafe_allow_html=True)
-
-    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#FFDA47; font-size:22px; text-align:center; font-weight:700; font-family:Spectral, serif;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
-    
-    with st.form(key='email_form'):
-        c1, c2 = st.columns(2)
-        with c1:
-            name = st.text_input("Name", placeholder="Your Name")
-        with c2:
-            email = st.text_input("Email", placeholder="name@company.com")
-        
-        b1, b2, b3 = st.columns([1, 2, 1])
-        with b2:
-            get_pdf = st.form_submit_button("EMAIL ME MY FOUND SCORE ANALYSIS")
-        
-        if get_pdf:
-            if name and email and "@" in email:
-                save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
-                if not PDF_AVAILABLE:
-                    st.error("Note: PDF Generation is currently disabled. Check requirements.txt")
-            else:
-                st.error("Please enter your name and valid email.")
-
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: #FFDA47; margin-bottom: 5px;'>UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>", unsafe_allow_html=True)
-    st.markdown("""
-    <p style='text-align: center; color: #fff; margin-bottom: 20px; font-size:
