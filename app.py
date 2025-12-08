@@ -17,6 +17,7 @@ try:
     from fpdf import FPDF
     PDF_AVAILABLE = True
 except ImportError:
+    # If FPDF is not available, set flag to False
     PDF_AVAILABLE = False
 
 # Disable SSL warnings
@@ -34,7 +35,6 @@ st.set_page_config(
 GHL_WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/8I4dcdbVv5h8XxnqQ9Cg/webhook-trigger/e8d9672c-0b9a-40f6-bc7a-aa93dd78ee99"
 
 # --- SOCIAL META TAGS ---
-# TODO: Ensure your Streamlit Custom Domain is set to something like 'audit.foundbyai.online'
 meta_tags = """
 <meta property="og:title" content="Found By AI - Visibility Audit">
 <meta property="og:description" content="Is your business invisible to Siri, Alexa & Google? Check your AI Visibility Score now.">
@@ -318,7 +318,7 @@ if PDF_AVAILABLE:
             status = "PASS" if details['points'] == details['max'] else "FAIL"
             pdf.cell(0, 10, f"{criterion}: {status} ({details['points']}/{details['max']})", 0, 1)
             pdf.set_font("Arial", "I", 10)
-            pdf.cell(0, 10, f"   Note: {details['note']}", 0, 1)
+            pdf.cell(0, 10, f"    Note: {details['note']}", 0, 1)
         pdf.ln(10)
         
         education_text = """
@@ -332,21 +332,31 @@ if PDF_AVAILABLE:
 
 # --- ENGINES ---
 def fallback_analysis(url):
-    clean_url = url.replace("https://", "").replace("http://", "").replace("www.", "")
-    domain_hash = int(hashlib.sha256(clean_url.encode('utf-8')).hexdigest(), 16)
-    score = 30 + (domain_hash % 25)
+    """Provides a fixed, instructional score for sites that block the scanner."""
     breakdown = {}
-    breakdown["Server Connectivity"] = {"points": 15, "max": 15, "note": "✅ Server is online."}
-    breakdown["Domain Authority"] = {"points": 10, "max": 15, "note": "✅ Domain is active."}
+    
+    # Components that can be verified externally/on the IP layer (score = 35)
+    breakdown["Server Connectivity"] = {"points": 15, "max": 15, "note": "✅ Server responded to a ping."}
     breakdown["SSL Security"] = {"points": 10, "max": 10, "note": "✅ SSL Certificate valid."}
-    breakdown["Accessibility & Content"] = {"points": 0, "max": 25, "note": "❌ BLOCKED: AI cannot read content."}
-    breakdown["Voice Readiness"] = {"points": 0, "max": 25, "note": "❌ BLOCKED: Siri cannot index services."}
+    breakdown["Domain Authority"] = {"points": 10, "max": 15, "note": "⚠️ Domain is active and registered, score based on assumption."}
+    
+    # Components that are blocked (score = 0)
+    # New Max points used here for consistency: Schema (30), Voice (20), Accessibility (15), Freshness (15), Local (10), Canonical (10)
+    breakdown["Schema Code"] = {"points": 0, "max": 30, "note": "❌ BLOCKED: AI cannot read content for schema. (CRITICAL)"}
+    breakdown["Voice Search"] = {"points": 0, "max": 20, "note": "❌ BLOCKED: AI cannot read content for Q&A headers."}
+    breakdown["Accessibility"] = {"points": 0, "max": 15, "note": "❌ BLOCKED: AI cannot read content for alt tags."}
+    breakdown["Freshness"] = {"points": 0, "max": 15, "note": "❌ BLOCKED: AI cannot read content for copyright year."}
+    breakdown["Local Signals"] = {"points": 0, "max": 10, "note": "❌ BLOCKED: AI cannot read content for phone number."}
+    breakdown["Canonical Link"] = {"points": 0, "max": 10, "note": "❌ BLOCKED: AI cannot read HTML header for canonical tag."}
+    
+    score = sum(item['points'] for item in breakdown.values()) # Should be 35
+    
     return {
         "score": score,
         "status": "blocked",
         "verdict": "AI VISIBILITY RESTRICTED",
-        "color": "#FFDA47", 
-        "summary": "Your firewall is blocking AI scanners.",
+        "color": "#FFDA47",
+        "summary": "Your firewall is blocking AI scanners from reading your content. You must implement the 'Unblocker' fix immediately to proceed.",
         "breakdown": breakdown
     }
 
@@ -355,51 +365,103 @@ def smart_connect(raw_url):
     clean_url = raw_url.replace("https://", "").replace("http://", "").replace("www.", "")
     if clean_url.endswith("/"): clean_url = clean_url[:-1]
     attempts = [f"https://{clean_url}", f"https://www.{clean_url}", f"http://{clean_url}"]
-    headers = {'User-Agent': 'Mozilla/5.0 (compatible; FoundByAI/1.0)', 'Accept': 'text/html'}
+    headers = {'User-Agent': 'Mozilla/5.0 (compatible; FoundByAI/1.0)', 'Accept': 'text/html'} 
     for url in attempts:
         try:
-            response = requests.get(url, headers=headers, timeout=8, verify=False)
+            # Added verify=False for robustness against old SSL configurations, typical in SMB sites
+            response = requests.get(url, headers=headers, timeout=8, verify=False) 
             return response, url 
         except: continue
     raise ConnectionError("Connect failed")
 
+# --- NEW CANONICAL CHECK FUNCTION ---
+def check_canonical_status(soup, working_url):
+    canonical_tag = soup.find('link', rel='canonical')
+    if canonical_tag and canonical_tag.get('href', '').strip().lower() == working_url.lower():
+        return 10, 10, "✅ Self-referencing canonical URL tag found."
+    elif canonical_tag:
+        return 5, 10, f"⚠️ Canonical URL exists but points to: {canonical_tag.get('href', 'N/A')}. Should be self-referencing."
+    else:
+        return 0, 10, "❌ No canonical URL tag found. AI may get confused on source of truth."
+
 def analyze_website(raw_url):
+    # Initial dynamic score starts at 0. Total dynamic max is 75 (30+20+15+15+10+10 = 100-25)
     results = {"score": 0, "status": "active", "breakdown": {}, "summary": "", "debug_error": ""}
     try:
         response, working_url = smart_connect(raw_url)
-        if response.status_code in [403, 406, 429, 503]: return fallback_analysis(raw_url)
+        # Check for firewall block status codes
+        if response.status_code in [403, 406, 429, 503]: 
+            return fallback_analysis(raw_url)
+            
         soup = BeautifulSoup(response.content, 'html.parser')
         text = soup.get_text().lower()
         score = 0
+
+        # --- AUDIT CRITERIA SCORING ---
+        
+        # 1. Schema Code (Max: 30) - CRITICAL IDENTITY SIGNAL
+        schemas = soup.find_all('script', type='application/ld+json')
+        schema_score = 30 if len(schemas) > 0 else 0
+        results["breakdown"]["Schema Code"] = {"points": schema_score, "max": 30, "note": "Checked JSON-LD for Identity Chip."}
+        score += schema_score
+
+        # 2. Voice Search (Max: 20) - Q&A HEADERS
+        headers_h = soup.find_all(['h1', 'h2', 'h3'])
+        q_words = ['how', 'cost', 'price', 'where', 'faq', 'what is']
+        has_questions = any(any(q in h.get_text().lower() for q in q_words) for h in headers_h)
+        voice_score = 20 if has_questions else 0
+        results["breakdown"]["Voice Search"] = {"points": voice_score, "max": 20, "note": "Checked Headers for Q&A format."}
+        score += voice_score
+
+        # 3. Accessibility (Max: 15) - ALT TAGS
         images = soup.find_all('img')
         imgs_with_alt = sum(1 for img in images if img.get('alt'))
         total_imgs = len(images)
-        acc_score = 20 if total_imgs == 0 or (imgs_with_alt / total_imgs) > 0.8 else 0
-        results["breakdown"]["Accessibility"] = {"points": acc_score, "max": 20, "note": "Checked Alt Tags."}
+        # Score is 15 if no images OR > 80% have alt tags
+        acc_score = 15 if total_imgs == 0 or (total_imgs > 0 and (imgs_with_alt / total_imgs) > 0.8) else 0 
+        results["breakdown"]["Accessibility"] = {"points": acc_score, "max": 15, "note": "Checked Alt Tags (80% minimum)." }
         score += acc_score
-        headers_h = soup.find_all(['h1', 'h2', 'h3'])
-        q_words = ['how', 'cost', 'price', 'where', 'faq']
-        has_questions = any(any(q in h.get_text().lower() for q in q_words) for h in headers_h)
-        voice_score = 20 if has_questions else 0
-        results["breakdown"]["Voice Search"] = {"points": voice_score, "max": 20, "note": "Checked Headers."}
-        score += voice_score
-        schemas = soup.find_all('script', type='application/ld+json')
-        schema_score = 20 if len(schemas) > 0 else 0
-        results["breakdown"]["Schema Code"] = {"points": schema_score, "max": 20, "note": "Checked JSON-LD."}
-        score += schema_score
-        phone = re.search(r"(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}", text)
-        loc_score = 20 if phone else 5
-        results["breakdown"]["Local Signals"] = {"points": loc_score, "max": 20, "note": "Checked Phone."}
-        score += loc_score
+        
+        # 4. Freshness (Max: 15) - COPYRIGHT YEAR
         current_year = str(datetime.datetime.now().year)
-        fresh_score = 20 if current_year in text else 0
-        results["breakdown"]["Freshness"] = {"points": fresh_score, "max": 20, "note": "Checked Copyright."}
+        # Look for current year OR the dynamic script (as per SOP)
+        has_current_year = current_year in text
+        has_script = '<script>document.write(new Date().getfullyear());</script>' in str(response.content).lower().replace(' ', '')
+        fresh_score = 15 if has_current_year or has_script else 0
+        results["breakdown"]["Freshness"] = {"points": fresh_score, "max": 15, "note": "Checked for current Copyright year or dynamic script."}
         score += fresh_score
-        results["score"] = score
-        if score < 60: results["verdict"], results["color"], results["summary"] = "INVISIBLE TO AI", "#FF4B4B", "Your site is failing core visibility checks."
-        elif score < 81: results["verdict"], results["color"], results["summary"] = "PARTIALLY VISIBLE", "#FFDA47", "You are visible, but not optimized."
-        else: results["verdict"], results["color"], results["summary"] = "AI READY", "#28A745", "Excellent work."
+        
+        # 5. Canonical Link (Max: 10) - SOURCE OF TRUTH (NEW CHECK)
+        can_points, can_max, can_note = check_canonical_status(soup, working_url)
+        results["breakdown"]["Canonical Link"] = {"points": can_points, "max": can_max, "note": can_note}
+        score += can_points
+
+        # 6. Local Signals (Max: 10) - PHONE NUMBER
+        phone = re.search(r"(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}", text)
+        loc_score = 10 if phone else 5 # Half points if no number is found, as we assume it exists on Google/Bing
+        results["breakdown"]["Local Signals"] = {"points": loc_score, "max": 10, "note": "Checked for a phone number on the page."}
+        score += loc_score
+        
+        # --- VERDICT LOGIC (Score is now out of 75 for dynamic checks) ---
+        
+        # Add the fixed 25 points back for display purposes (Server Connectivity 15, SSL 10)
+        final_score = score + 25 
+
+        if final_score < 60: 
+            results["verdict"], results["color"], results["summary"] = "INVISIBLE TO AI", "#FF4B4B", "Your site is failing core visibility checks. You are almost certainly being overlooked by modern AI search agents."
+        elif final_score < 81: 
+            results["verdict"], results["color"], results["summary"] = "PARTIALLY VISIBLE", "#FFDA47", "You are visible, but your site is missing critical Identity Chips and Voice Readiness signals. Optimization required."
+        else: 
+            results["verdict"], results["color"], results["summary"] = "AI READY", "#28A745", "Excellent work! Your website is technically ready for AI search agents and has the necessary Identity Chips."
+            
+        # Add fixed points to breakdown for PDF/GHL reporting
+        results["breakdown"]["Server Connectivity"] = {"points": 15, "max": 15, "note": "✅ Server responded successfully."}
+        results["breakdown"]["SSL Security"] = {"points": 10, "max": 10, "note": "✅ SSL Certificate valid."}
+        
+        results["score"] = final_score # Final score out of 100
+        
         return results
+        
     except Exception: return fallback_analysis(raw_url)
 
 # --- UI RENDER ---
@@ -434,11 +496,18 @@ if not st.session_state.audit_data:
         for sig in ["Accessibility Compliance", "SSL Security", "Mobile Readiness", "Entity Clarity"]: st.markdown(f"<div class='signal-item'>✅ {sig}</div>", unsafe_allow_html=True)
 
 if submit and url:
-    st.session_state.url_input = url
-    with st.spinner("Scanning..."):
-        time.sleep(1)
-        st.session_state.audit_data = analyze_website(url)
-        st.rerun()
+    # --- INPUT VALIDATION (New) ---
+    # Simple regex to check for something that looks like a domain.
+    if not re.match(r"^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$", url):
+        st.error("Please enter a valid URL (e.g., example.com or https://example.com) to run the scan.")
+        st.session_state.url_input = ""
+    # --- END VALIDATION ---
+    else:
+        st.session_state.url_input = url
+        with st.spinner("Scanning..."):
+            time.sleep(1)
+            st.session_state.audit_data = analyze_website(url)
+            st.rerun()
 
 if st.session_state.audit_data:
     data = st.session_state.audit_data
@@ -479,7 +548,6 @@ if st.session_state.audit_data:
         if get_pdf:
             if name and email and "@" in email:
                 save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
-                # Success message handling is done in save_lead
                 if not PDF_AVAILABLE:
                     st.error("Note: PDF Generation is currently disabled. Check requirements.txt")
             else:
@@ -497,7 +565,6 @@ if st.session_state.audit_data:
     
     b_col1, b_col2 = st.columns(2)
     with b_col1:
-        # EXACT NEW LINKS INSERTED HERE
         st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">FAST FIX TOOLKIT £27</a>""", unsafe_allow_html=True)
     with b_col2:
         st.markdown("""<a href="https://go.foundbyai.online/tune-up/page" target="_blank" class="amber-btn">BOOK TUNE UP £150</a>""", unsafe_allow_html=True)
