@@ -1,20 +1,8 @@
 import streamlit as st
 import requests
 from bs4 import BeautifulSoup
-import re
-import time
 import datetime
 import urllib3
-import json
-import os
-import pandas as pd
-
-# --- SAFE IMPORT FOR PDF GENERATION ---
-try:
-    from fpdf import FPDF
-    PDF_AVAILABLE = True
-except ImportError:
-    PDF_AVAILABLE = False
 
 # Disable SSL warnings for robust scanning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -30,112 +18,46 @@ st.set_page_config(
 # --- GHL WEBHOOK CONFIGURATION ---
 GHL_WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/8I4dcdbVv5h8XxnqQ9Cg/webhook-trigger/e8d9672c-0b9a-40f6-bc7a-aa93dd78ee99"
 
-# --- CUSTOM CSS (INSTRICTIVE UI & LINK ICON REMOVAL) ---
+# --- CUSTOM CSS ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;800&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
     .stApp { background-color: #1A1F2A; color: white; }
-    
     #MainMenu, footer, header {visibility: hidden;}
     [data-testid="stHeaderAction"] {display: none !important;}
     
-    /* REMOVE LINK ICON & FULLSCREEN OVERLAY */
     [data-testid="StyledFullScreenButton"] { display: none !important; }
     [data-testid="stImage"] a { pointer-events: none !important; cursor: default !important; }
 
-    h1 { 
-        color: #FFDA47 !important; 
-        font-family: 'Spectral', serif !important; 
-        font-weight: 800; 
-        text-align: center; 
-        font-size: 3.5rem; 
-        line-height: 1;
-        margin-top: 10px;
-        margin-bottom: 5px;
-    }
-    
-    .sub-head { 
-        text-align: center; 
-        color: #FFFFFF; 
-        font-size: 20px; 
-        margin-bottom: 25px; 
-        font-family: 'Inter', sans-serif; 
+    h1 { color: #FFDA47 !important; font-family: 'Spectral', serif !important; font-weight: 800; text-align: center; font-size: 3.5rem; line-height: 1; margin-top: 10px; margin-bottom: 5px; }
+    .sub-head { text-align: center; color: #FFFFFF; font-size: 20px; margin-bottom: 25px; font-family: 'Inter', sans-serif; }
+    .explainer-text { text-align: center; color: #B0B0B0; font-size: 16px; margin-bottom: 30px; max-width: 600px; margin-left: auto; margin-right: auto; }
+
+    .signal-item { background-color: #2D3342; padding: 10px; border-radius: 6px; margin-bottom: 10px; font-family: 'Inter', sans-serif; font-size: 14px; color: #E0E0E0; border-left: 3px solid #FFDA47; }
+
+    div[data-testid="stButton"] > button, div[data-testid="stFormSubmitButton"] > button {
+        background-color: #FFDA47 !important; color: #000000 !important; font-weight: 900 !important; border-radius: 8px !important; height: 50px !important; width: 100%; border: none !important;
     }
 
-    .explainer-text {
-        text-align: center;
-        color: #B0B0B0;
-        font-size: 16px;
-        margin-bottom: 30px;
-        max-width: 600px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .signal-item {
-        background-color: #2D3342;
-        padding: 10px;
-        border-radius: 6px;
-        margin-bottom: 10px;
-        font-family: 'Inter', sans-serif;
-        font-size: 14px;
-        color: #E0E0E0;
-        border-left: 3px solid #FFDA47;
-    }
-
-    div[data-testid="stButton"] > button, 
-    div[data-testid="stFormSubmitButton"] > button {
-        background-color: #FFDA47 !important; 
-        color: #000000 !important;
-        font-weight: 900 !important; 
-        border-radius: 8px !important;
-        height: 50px !important;
-        width: 100%;
-        border: none !important;
-    }
-
-    .score-container { 
-        background-color: #252B3B; 
-        border-radius: 15px; 
-        padding: 20px; 
-        text-align: center; 
-        margin-top: 10px; 
-        border: 1px solid #3E4658; 
-    }
+    .score-container { background-color: #252B3B; border-radius: 15px; padding: 20px; text-align: center; margin-top: 10px; border: 1px solid #3E4658; }
     .score-circle { font-size: 48px !important; font-weight: 800; color: #FFDA47; font-family: 'Spectral', serif; }
     
-    /* THE INSTRUCTIVE ACTION BUTTON */
     .amber-btn {
-        display: block;
-        background-color: #FFDA47;
-        color: #000000;
-        font-weight: 900;
-        border-radius: 8px;
-        height: 70px;
-        line-height: 1.2;
-        padding-top: 12px;
-        text-decoration: none;
-        text-align: center;
-        font-family: 'Inter', sans-serif;
-        margin-top: 20px;
-        font-size: 18px;
-        text-transform: uppercase;
-        box-shadow: 0 4px 15px rgba(255, 218, 71, 0.3);
+        display: block; background-color: #FFDA47; color: #000000; font-weight: 900; border-radius: 8px; height: 75px; line-height: 1.2; padding-top: 15px; text-decoration: none; text-align: center; font-family: 'Inter', sans-serif; margin-top: 20px; font-size: 18px; text-transform: uppercase; box-shadow: 0 4px 15px rgba(255, 218, 71, 0.3);
     }
     .amber-btn:hover { background-color: #FFFFFF; color: #000000; transform: scale(1.01); transition: 0.2s; }
     </style>
 """, unsafe_allow_html=True)
 
-# --- BACKEND LOGIC ---
 def save_lead_to_ghl(name, email, url, score, verdict):
     try:
         payload = {"name": name, "email": email, "website": url, "customData": {"audit_score": score, "audit_verdict": verdict}}
         r = requests.post(GHL_WEBHOOK_URL, json=payload, timeout=5)
-        if r.status_code in [200, 201]: st.success(f"Report sent to {email}!")
+        if r.status_code in [200, 201]: st.success(f"Email summary of gaps sent to {email}!")
         else: st.error("Sync error.")
-    except: st.error("Server connection failed.")
+    except: st.error("Connection failed.")
 
 def smart_connect(raw_url):
     raw_url = raw_url.strip()
@@ -153,7 +75,7 @@ def analyze_website(raw_url):
         response, working_url = smart_connect(raw_url)
         soup = BeautifulSoup(response.content, 'html.parser')
         text = soup.get_text().lower()
-        score = 25 # Tech Base
+        score = 25 
         schemas = soup.find_all('script', type='application/ld+json')
         schema_content = "".join([s.string for s in schemas if s.string]).lower()
         if any(x in schema_content for x in ["localbusiness", "organization"]): score += 30
@@ -164,26 +86,23 @@ def analyze_website(raw_url):
         if tag and tag.get('href', '').strip().lower().rstrip('/') == working_url.lower().rstrip('/'): score += 10
         if str(datetime.datetime.now().year) in text: score += 7
         if all(img.get('alt') for img in soup.find_all('img')) if soup.find_all('img') else False: score += 8
-        final_total = min(score, 100)
+        final_total = min(score, 100) # CEILING FIX
         verdict = "AI READY" if final_total >= 85 else ("NEEDS OPTIMIZATION" if final_total >= 55 else "INVISIBLE")
         color = "#28A745" if final_total >= 85 else ("#FFDA47" if final_total >= 55 else "#FF4B4B")
         return {"score": final_total, "verdict": verdict, "color": color}
     except: return {"score": 35, "verdict": "SCAN BLOCKED", "color": "#FFDA47"}
 
-# --- UI RENDER ---
 st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
 st.markdown("<div class='sub-head'>Is your business visible to Google, Apple, Siri, Alexa, and AI Agents?</div>", unsafe_allow_html=True)
 
 if "audit_results" not in st.session_state:
     st.markdown("<div class='explainer-text'>AI search agents are replacing traditional search. If your site isn't technically optimized, you're becoming invisible. Run your audit now.</div>", unsafe_allow_html=True)
-    st.markdown("<div style='text-align:center; font-weight:800; margin-bottom:15px; letter-spacing:1px;'>8 CRITICAL AI SIGNALS</div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align:center; font-weight:800; margin-bottom:15px;'>8 CRITICAL AI SIGNALS</div>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
-        for s in ["Voice Readiness", "AI Crawler Access", "Schema Markup", "Content Freshness"]:
-            st.markdown(f"<div class='signal-item'>✅ {s}</div>", unsafe_allow_html=True)
+        for s in ["Voice Readiness", "AI Crawler Access", "Schema Markup", "Content Freshness"]: st.markdown(f"<div class='signal-item'>✅ {s}</div>", unsafe_allow_html=True)
     with col2:
-        for s in ["Accessibility", "SSL Security", "Mobile Readiness", "Entity Clarity"]:
-            st.markdown(f"<div class='signal-item'>✅ {s}</div>", unsafe_allow_html=True)
+        for s in ["Accessibility", "SSL Security", "Mobile Readiness", "Entity Clarity"]: st.markdown(f"<div class='signal-item'>✅ {s}</div>", unsafe_allow_html=True)
 
 with st.form("audit_form"):
     url_input = st.text_input("Enter Website URL", placeholder="yourbusiness.com", label_visibility="collapsed")
@@ -205,20 +124,18 @@ if "audit_results" in st.session_state:
         </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<h3 style='text-align:center; color:#FFDA47; margin-top:20px;'>Email Me My Full AI Visibility Report</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align:center; color:#FFDA47; margin-top:20px;'>Email Me a Summary of My AI Gaps</h3>", unsafe_allow_html=True)
     with st.form("lead_form"):
         c1, c2 = st.columns(2)
-        u_name = c1.text_input("Name", placeholder="Your Name")
-        u_email = c2.text_input("Email", placeholder="name@company.com")
-        if st.form_submit_button("SEND MY DETAILED REPORT"):
-            if u_name and u_email:
-                save_lead_to_ghl(u_name, u_email, st.session_state.current_url, res['score'], res['verdict'])
+        u_name, u_email = c1.text_input("Name"), c2.text_input("Email")
+        if st.form_submit_button("SEND SUMMARY EMAIL"):
+            if u_name and u_email: save_lead_to_ghl(u_name, u_email, st.session_state.current_url, res['score'], res['verdict'])
             else: st.error("Please provide name and email.")
 
-    st.markdown("<hr style='border-color: #3E4658;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-color: #3E4658;'>")
     
-    # THE INSTRUCTIVE CALL TO ACTION
-    st.markdown('<a href="https://go.foundbyai.online/get-toolkit" class="amber-btn">CLICK HERE TO UNBLOCK YOUR BUSINESS:<br><span style="font-size:14px; font-weight:400;">GET YOUR AI FIX CHECKLIST</span></a>', unsafe_allow_html=True)
+    # ACCURATE 10-STEP INSTRUCTIVE CTA
+    st.markdown('<a href="https://go.foundbyai.online/get-toolkit" class="amber-btn">CLICK HERE TO UNBLOCK YOUR BUSINESS:<br><span style="font-size:14px; font-weight:400;">VIEW THE 10-STEP ROADMAP TO 100%</span></a>', unsafe_allow_html=True)
 
     st.markdown(f"""
         <div style='background-color: #2D3342; padding: 15px; border-radius: 8px; margin-top: 25px; text-align: center; border: 1px solid #3b5998;'>
