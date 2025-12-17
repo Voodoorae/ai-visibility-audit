@@ -16,7 +16,7 @@ try:
 except ImportError:
     PDF_AVAILABLE = False
 
-# Disable SSL warnings
+# Disable SSL warnings for robust scanning of various site types
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- CONFIGURATION & BRANDING ---
@@ -30,7 +30,7 @@ st.set_page_config(
 # --- GHL WEBHOOK CONFIGURATION ---
 GHL_WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/8I4dcdbVv5h8XxnqQ9Cg/webhook-trigger/e8d9672c-0b9a-40f6-bc7a-aa93dd78ee99"
 
-# --- CUSTOM CSS (UI RESTORATION & LINK ICON REMOVAL) ---
+# --- CUSTOM CSS (UI CLEANUP, LINK ICON REMOVAL, & BUTTON STYLING) ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;800&display=swap');
@@ -38,12 +38,16 @@ st.markdown("""
 
     .stApp { background-color: #1A1F2A; color: white; }
     
-    #MainMenu, footer, header {visibility: hidden;}
+    /* Hide Streamlit Native UI Elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
     [data-testid="stHeaderAction"] {display: none !important;}
     
-    /* REMOVE LINK ICON & FULLSCREEN */
+    /* REMOVE LINK ICON & FULLSCREEN OVERLAY ON IMAGES */
     [data-testid="StyledFullScreenButton"] { display: none !important; }
     [data-testid="stImage"] a { pointer-events: none !important; cursor: default !important; }
+    .st-emotion-cache-15zrgzn e1nzilvr4 { display: none !important; } 
 
     h1 { 
         color: #FFDA47 !important; 
@@ -85,6 +89,7 @@ st.markdown("""
         border-left: 3px solid #FFDA47;
     }
 
+    /* Primary Form Button Styling */
     div[data-testid="stButton"] > button, 
     div[data-testid="stFormSubmitButton"] > button {
         background-color: #FFDA47 !important; 
@@ -96,6 +101,7 @@ st.markdown("""
         border: none !important;
     }
 
+    /* Score Card Styles */
     .score-container { 
         background-color: #252B3B; 
         border-radius: 15px; 
@@ -104,20 +110,35 @@ st.markdown("""
         margin-top: 10px; 
         border: 1px solid #3E4658; 
     }
-    .score-circle { font-size: 48px !important; font-weight: 800; color: #FFDA47; font-family: 'Spectral', serif; }
+    .score-circle { 
+        font-size: 48px !important; 
+        font-weight: 800; 
+        color: #FFDA47;
+        font-family: 'Spectral', serif; 
+    }
     
+    /* The Wide "Unblock" Action Button */
     .amber-btn {
         display: block;
         background-color: #FFDA47;
         color: #000000;
         font-weight: 900;
         border-radius: 8px;
-        height: 55px;
-        line-height: 55px;
+        height: 65px;
+        line-height: 65px;
         text-decoration: none;
         text-align: center;
         font-family: 'Inter', sans-serif;
-        margin-top: 10px;
+        margin-top: 20px;
+        font-size: 20px;
+        text-transform: uppercase;
+        box-shadow: 0 4px 15px rgba(255, 218, 71, 0.2);
+    }
+    .amber-btn:hover {
+        background-color: #FFFFFF;
+        color: #000000;
+        transform: translateY(-2px);
+        transition: 0.2s;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -126,33 +147,37 @@ st.markdown("""
 def save_lead_to_ghl(name, email, url, score, verdict):
     try:
         payload = {
-            "name": name,
-            "email": email,
+            "name": name, 
+            "email": email, 
             "website": url,
             "customData": {"audit_score": score, "audit_verdict": verdict}
         }
-        requests.post(GHL_WEBHOOK_URL, json=payload, timeout=5)
-        st.success(f"Report sent to {email}!")
+        r = requests.post(GHL_WEBHOOK_URL, json=payload, timeout=5)
+        if r.status_code in [200, 201]:
+            st.success(f"Success! Your detailed analysis is being sent to {email}.")
+        else:
+            st.error("Sync error. Please try again.")
     except:
-        st.error("Failed to sync with GHL. Please try again.")
+        st.error("Connection to GoHighLevel failed.")
 
-# --- SCANNING ENGINE (STRICT & HARDENED) ---
+# --- SCANNING ENGINES ---
 def check_canonical_status(soup, working_url):
     tag = soup.find('link', rel='canonical')
-    if tag and tag.get('href', '').strip().lower() == working_url.lower():
-        return 10, "✅ Self-referencing canonical tag found."
-    return 0, "❌ Missing/Invalid Canonical tag."
+    if tag and tag.get('href', '').strip().lower().rstrip('/') == working_url.lower().rstrip('/'):
+        return 10
+    return 0
 
 def smart_connect(raw_url):
     raw_url = raw_url.strip()
     clean_url = raw_url.replace("https://", "").replace("http://", "").replace("www.", "")
     attempts = [f"https://{clean_url}", f"https://www.{clean_url}"]
+    headers = {'User-Agent': 'Mozilla/5.0 (compatible; FoundByAI/2.0)'}
     for url in attempts:
         try:
-            r = requests.get(url, headers={'User-Agent': 'FoundByAI/2.0'}, timeout=10, verify=False)
-            return r, url
+            response = requests.get(url, headers=headers, timeout=12, verify=False)
+            return response, url
         except: continue
-    raise ConnectionError("Connect failed.")
+    raise ConnectionError("Failed to connect.")
 
 def analyze_website(raw_url):
     try:
@@ -160,32 +185,41 @@ def analyze_website(raw_url):
         soup = BeautifulSoup(response.content, 'html.parser')
         text = soup.get_text().lower()
         
-        # Scoring Math
-        base_score = 25 # Technical Base
-        
-        # Schema (30)
+        # 1. FIXED TECH BASE (25 PTS)
+        score = 25
+
+        # 2. SCHEMA STRICKNESS (30 PTS)
         schemas = soup.find_all('script', type='application/ld+json')
         schema_content = "".join([s.string for s in schemas if s.string]).lower()
-        s_pts = 30 if any(x in schema_content for x in ["localbusiness", "organization"]) else (10 if schemas else 0)
-        
-        # Voice (20)
-        headers = [h.get_text().lower() for h in soup.find_all(['h1', 'h2', 'h3'])]
-        v_pts = 20 if any(any(q in h for q in ['how','cost','price','best','near']) for h in headers) else 0
-        
-        # Canonical (10)
-        c_pts, _ = check_canonical_status(soup, working_url)
-        
-        # Integrity (15)
-        has_alt = all(img.get('alt') for img in soup.find_all('img')) if soup.find_all('img') else False
-        has_yr = str(datetime.datetime.now().year) in text
-        d_pts = (8 if has_alt else 0) + (7 if has_yr else 0)
+        if any(x in schema_content for x in ["localbusiness", "organization", "professional service"]):
+            score += 30
+        elif len(schemas) > 0:
+            score += 10
 
-        total = min(base_score + s_pts + v_pts + c_pts + d_pts, 100)
+        # 3. VOICE SEARCH (20 PTS)
+        headers = [h.get_text().lower() for h in soup.find_all(['h1', 'h2', 'h3'])]
+        q_words = ['how', 'cost', 'price', 'why', 'where', 'best']
+        if any(any(q in h for q in q_words) for h in headers):
+            score += 20
+
+        # 4. CANONICAL (10 PTS)
+        score += check_canonical_status(soup, working_url)
+
+        # 5. DATA INTEGRITY (15 PTS)
+        current_year = str(datetime.datetime.now().year) in text
+        imgs = soup.find_all('img')
+        has_alt = all(img.get('alt') for img in imgs) if imgs else False
+        if current_year: score += 7
+        if has_alt: score += 8
+
+        # --- THE MATH CEILING (Fixes 115% Bug) ---
+        final_total = min(score, 100)
         
-        verdict = "AI READY" if total >= 85 else ("NEEDS OPTIMIZATION" if total >= 55 else "INVISIBLE")
-        color = "#28A745" if total >= 85 else ("#FFDA47" if total >= 55 else "#FF4B4B")
+        # Verdict Logic
+        verdict = "AI READY" if final_total >= 85 else ("NEEDS OPTIMIZATION" if final_total >= 55 else "INVISIBLE")
+        color = "#28A745" if final_total >= 85 else ("#FFDA47" if final_total >= 55 else "#FF4B4B")
         
-        return {"score": total, "verdict": verdict, "color": color}
+        return {"score": final_total, "verdict": verdict, "color": color}
     except:
         return {"score": 35, "verdict": "SCAN BLOCKED", "color": "#FFDA47"}
 
@@ -197,7 +231,7 @@ if "audit_results" not in st.session_state:
     st.markdown("<div class='explainer-text'>AI search agents are replacing traditional search. If your site isn't technically optimized, you're becoming invisible. Run your audit now.</div>", unsafe_allow_html=True)
     
     # 8 SIGNALS GRID
-    st.markdown("<div style='text-align:center; font-weight:800; margin-bottom:15px;'>8 CRITICAL AI SIGNALS</div>", unsafe_allow_html=True)
+    st.markdown("<div style='text-align:center; font-weight:800; margin-bottom:15px; letter-spacing:1px;'>8 CRITICAL AI SIGNALS</div>", unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
         for s in ["Voice Readiness", "AI Crawler Access", "Schema Markup", "Content Freshness"]:
@@ -226,22 +260,32 @@ if "audit_results" in st.session_state:
         </div>
     """, unsafe_allow_html=True)
 
-    # LEAD CAPTURE FORM
-    st.markdown("<h3 style='text-align:center; color:#FFDA47; margin-top:20px;'>Get the Detailed Analysis PDF</h3>", unsafe_allow_html=True)
+    # LEAD CAPTURE: Corrected Language (Trust Building)
+    st.markdown("<h3 style='text-align:center; color:#FFDA47; margin-top:20px;'>Email Me My Full AI Visibility Report</h3>", unsafe_allow_html=True)
     with st.form("lead_form"):
         c1, c2 = st.columns(2)
-        u_name = c1.text_input("Name")
-        u_email = c2.text_input("Email")
+        u_name = c1.text_input("Name", placeholder="Your Name")
+        u_email = c2.text_input("Email", placeholder="name@company.com")
         if st.form_submit_button("SEND MY DETAILED REPORT"):
             if u_name and u_email:
                 save_lead_to_ghl(u_name, u_email, st.session_state.current_url, res['score'], res['verdict'])
             else: st.error("Please provide name and email.")
 
-    # CTA BUTTONS
-    st.markdown("<hr>", unsafe_allow_html=True)
-    b1, b2 = st.columns(2)
-    b1.markdown('<a href="https://go.foundbyai.online/get-toolkit" class="amber-btn">FAST FIX TOOLKIT £27</a>', unsafe_allow_html=True)
-    b2.markdown('<a href="https://go.foundbyai.online/tune-up/page" class="amber-btn">BOOK TUNE UP £150</a>', unsafe_allow_html=True)
+    # ACTION SECTION: High-Urgency Bridge
+    st.markdown("<hr style='border-color: #3E4658;'>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; font-size: 18px; color: #E0E0E0;'><strong>Warning:</strong> Your business is currently being bypassed by AI Search Agents. Follow the roadmap below to remove these restrictions.</p>", unsafe_allow_html=True)
+    
+    # THE PRIMARY "UNBLOCK" BUTTON
+    st.markdown('<a href="https://go.foundbyai.online/get-toolkit" class="amber-btn" style="text-decoration: none;">UNBLOCK YOUR BUSINESS: STEP-BY-STEP</a>', unsafe_allow_html=True)
+
+    # FACEBOOK COMMUNITY INTEGRATION (The Trust Loop)
+    st.markdown(f"""
+        <div style='background-color: #2D3342; padding: 15px; border-radius: 8px; margin-top: 25px; text-align: center; border: 1px solid #3b5998;'>
+            <p style='margin-bottom: 5px; color: #FFFFFF;'><strong>Stuck on a technical fix?</strong></p>
+            <p style='font-size: 14px; color: #B0B0B0; margin-bottom: 15px;'>Join our community for free daily guidance and score-boosting tips.</p>
+            <a href="https://www.facebook.com/FoundByAI/" target="_blank" style="color: #FFDA47; text-decoration: none; font-weight: 700; font-size: 16px;">JOIN THE FOUND BY AI COMMUNITY →</a>
+        </div>
+    """, unsafe_allow_html=True)
     
     if st.button("🔄 START NEW AUDIT"):
         del st.session_state.audit_results
