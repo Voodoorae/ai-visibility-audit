@@ -55,7 +55,7 @@ def save_lead_to_ghl(name, email, url, score, verdict):
     try:
         payload = {"name": name, "email": email, "website": url, "customData": {"audit_score": score, "audit_verdict": verdict}}
         r = requests.post(GHL_WEBHOOK_URL, json=payload, timeout=5)
-        if r.status_code in [200, 201]: st.success(f"Email summary of gaps sent to {email}!")
+        if r.status_code in [200, 201]: st.success(f"Email summary of results sent to {email}!")
         else: st.error("Sync error.")
     except: st.error("Connection failed.")
 
@@ -86,7 +86,9 @@ def analyze_website(raw_url):
         if tag and tag.get('href', '').strip().lower().rstrip('/') == working_url.lower().rstrip('/'): score += 10
         if str(datetime.datetime.now().year) in text: score += 7
         if all(img.get('alt') for img in soup.find_all('img')) if soup.find_all('img') else False: score += 8
-        final_total = min(score, 100) # CEILING FIX
+        
+        # FIXED: CEILING TO PREVENT 115% BUG
+        final_total = min(score, 100)
         verdict = "AI READY" if final_total >= 85 else ("NEEDS OPTIMIZATION" if final_total >= 55 else "INVISIBLE")
         color = "#28A745" if final_total >= 85 else ("#FFDA47" if final_total >= 55 else "#FF4B4B")
         return {"score": final_total, "verdict": verdict, "color": color}
@@ -132,15 +134,17 @@ if "audit_results" in st.session_state:
             if u_name and u_email: save_lead_to_ghl(u_name, u_email, st.session_state.current_url, res['score'], res['verdict'])
             else: st.error("Please provide name and email.")
 
-    st.markdown("<hr style='border-color: #3E4658;'>")
+    # FIXED: Renders the horizontal line properly
+    st.markdown("<hr style='border-color: #3E4658;'>", unsafe_allow_html=True)
     
-    # ACCURATE 10-STEP INSTRUCTIVE CTA
+    # ACTION CTA
     st.markdown('<a href="https://go.foundbyai.online/get-toolkit" class="amber-btn">CLICK HERE TO UNBLOCK YOUR BUSINESS:<br><span style="font-size:14px; font-weight:400;">VIEW THE 10-STEP ROADMAP TO 100%</span></a>', unsafe_allow_html=True)
 
+    # UPDATED: Community language focusing on "tips and tweaks"
     st.markdown(f"""
         <div style='background-color: #2D3342; padding: 15px; border-radius: 8px; margin-top: 25px; text-align: center; border: 1px solid #3b5998;'>
             <p style='margin-bottom: 5px; color: #FFFFFF;'><strong>Stuck on a technical fix?</strong></p>
-            <p style='font-size: 14px; color: #B0B0B0; margin-bottom: 15px;'>Join our community for free daily guidance and score-boosting tips.</p>
+            <p style='font-size: 14px; color: #B0B0B0; margin-bottom: 15px;'>Join our community for regular tips and technical tweaks to boost your score.</p>
             <a href="https://www.facebook.com/FoundByAI/" target="_blank" style="color: #FFDA47; text-decoration: none; font-weight: 700; font-size: 16px;">JOIN THE FOUND BY AI COMMUNITY →</a>
         </div>
     """, unsafe_allow_html=True)
