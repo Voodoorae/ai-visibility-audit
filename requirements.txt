@@ -4,3 +4,5 @@ beautifulsoup4
 urllib3
 fpdf
 pandas
+gspread
+google-auth
