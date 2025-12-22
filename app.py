@@ -3,6 +3,8 @@ import requests
 from bs4 import BeautifulSoup
 import datetime
 import urllib3
+import gspread
+from google.oauth2.service_account import Credentials
 
 # Disable SSL warnings for robust scanning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -15,8 +17,29 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- GHL WEBHOOK CONFIGURATION ---
+# --- CONFIGURATION: WEBHOOKS & SHEETS ---
 GHL_WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/8I4dcdbVv5h8XxnqQ9Cg/webhook-trigger/e8d9672c-0b9a-40f6-bc7a-aa93dd78ee99"
+
+# 🔴 ACTION REQUIRED: PASTE YOUR GOOGLE SHEET URL BELOW
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1KZgBJZFGGeYciI3lgwnxnLe5LwWoJouuqod_ABAag7c/edit?gid=0#gid=0" 
+
+# --- GOOGLE SHEETS LOGGING FUNCTION ---
+def log_lead_to_sheet(url, score):
+    """Silently logs every scan to Google Sheets"""
+    try:
+        # Load credentials from Streamlit secrets
+        scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+        creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
+        client = gspread.authorize(creds)
+        
+        # Open sheet and append row
+        sheet = client.open_by_url(SHEET_URL).sheet1
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        sheet.append_row([timestamp, url, str(score), "Audit Run"])
+        
+    except Exception as e:
+        # Fail silently so the user experience isn't broken
+        print(f"⚠️ Logging Error: {e}")
 
 # --- CUSTOM CSS ---
 st.markdown("""
@@ -51,6 +74,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# --- CORE LOGIC ---
 def save_lead_to_ghl(name, email, url, score, verdict):
     try:
         payload = {"name": name, "email": email, "website": url, "customData": {"audit_score": score, "audit_verdict": verdict}}
@@ -94,6 +118,7 @@ def analyze_website(raw_url):
         return {"score": final_total, "verdict": verdict, "color": color}
     except: return {"score": 35, "verdict": "SCAN BLOCKED", "color": "#FFDA47"}
 
+# --- APP LAYOUT ---
 st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
 st.markdown("<div class='sub-head'>Is your business visible to Google, Apple, Siri, Alexa, and AI Agents?</div>", unsafe_allow_html=True)
 
@@ -112,8 +137,15 @@ with st.form("audit_form"):
 
 if submit and url_input:
     with st.spinner("Analyzing AI Signals..."):
-        st.session_state.audit_results = analyze_website(url_input)
+        # 1. Run Analysis
+        results = analyze_website(url_input)
+        st.session_state.audit_results = results
         st.session_state.current_url = url_input
+        
+        # 2. LOG TO GOOGLE SHEETS (The Spy Step)
+        log_lead_to_sheet(url_input, results['score'])
+        
+        # 3. Rerun to show results
         st.rerun()
 
 if "audit_results" in st.session_state:
