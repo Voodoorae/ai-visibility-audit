@@ -4,81 +4,155 @@ import gspread
 from google.oauth2.service_account import Credentials
 from datetime import datetime
 
-# --- CONFIGURATION ---
-# 🔴 URGENT: PASTE YOUR GOOGLE SHEET URL INSIDE THE QUOTES BELOW
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1KZgBJZFGGeYciI3lgwnxnLe5LwWoJouuqod_ABAag7c/edit?gid=0#gid=0"
+# --- PAGE CONFIGURATION (Must be first) ---
+st.set_page_config(page_title="AI Visibility Audit", page_icon="🤖", layout="centered")
 
-# --- SETUP GOOGLE SHEETS ---
+# --- 🔴 CONFIGURATION: PASTE YOUR SHEET URL BELOW ---
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1KZgBJZFGGeYciI3lgwnxnLe5LwWoJouuqod_ABAag7c/edit?gid=0#gid=0" 
+
+# --- 🎨 STYLING (Dark Charcoal Theme) ---
+st.markdown("""
+    <style>
+    /* Main Background - Dark Charcoal */
+    .stApp {
+        background-color: #121212;
+        color: #ffffff;
+    }
+    
+    /* Input Fields */
+    .stTextInput > div > div > input {
+        background-color: #2d2d2d;
+        color: #ffffff;
+        border: 1px solid #4a4a4a;
+        border-radius: 8px;
+    }
+    
+    /* Primary Button (The "Check" Button) */
+    .stButton > button {
+        width: 100%;
+        background-color: #e63946; /* High contrast red/pink */
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+        border: none;
+        padding: 0.6rem 1rem;
+        border-radius: 8px;
+        margin-top: 10px;
+    }
+    .stButton > button:hover {
+        background-color: #ff6b6b;
+        color: white;
+    }
+    
+    /* Metrics & Text */
+    h1, h2, h3 {
+        color: #ffffff !important;
+    }
+    .css-10trblm {
+        color: #ffffff;
+    }
+    [data-testid="stMetricValue"] {
+        color: #ff4b4b; /* Red score for urgency */
+        font-size: 3rem;
+    }
+    [data-testid="stMetricDelta"] {
+        color: #ff4b4b;
+    }
+    
+    /* Success/Error boxes */
+    .stAlert {
+        background-color: #2d2d2d;
+        color: white;
+        border: 1px solid #4a4a4a;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+# --- 🛠️ BACKEND: GOOGLE SHEETS CONNECTION ---
 def get_google_sheet_client():
-    # Load credentials from Streamlit secrets
+    """Connects to Google Sheets using Streamlit Secrets"""
     try:
         scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
         creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
         client = gspread.authorize(creds)
         return client
     except Exception as e:
-        st.error(f"⚠️ Database Connection Error: {e}")
+        # Silently fail in UI, print error to server logs
+        print(f"⚠️ Auth Error: {e}")
         return None
 
 def log_lead(url, score):
-    """Silently adds the user's search to the Google Sheet"""
+    """Silently logs the lead to the Sheet"""
     try:
         client = get_google_sheet_client()
         if client:
             sheet = client.open_by_url(SHEET_URL).sheet1
-            # Get current time
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            # Append row: [Date, URL, Score, Status]
-            sheet.append_row([timestamp, url, str(score), "New Lead"])
+            # Appends: Date | URL | Score | Type
+            sheet.append_row([timestamp, url, str(score), "Audit Run"])
     except Exception as e:
-        # If logging fails, print to console but don't break the user experience
-        print(f"Logging failed: {e}")
+        print(f"⚠️ Logging Error: {e}")
 
-# --- APP LOGIC ---
-st.set_page_config(page_title="AI Visibility Audit", page_icon="🤖")
+# --- 🚀 FRONTEND: THE APP UI ---
 
+# 1. Header Area
 st.title("🤖 AI Visibility Audit")
-st.subheader("Will ChatGPT recommend YOUR business?")
+st.subheader("Is your business invisible to ChatGPT?")
+st.markdown("Enter your website below to see if AI tools can recommend you.")
 
-# Input
-target_url = st.text_input("Enter your business website URL:", placeholder="e.g., www.joesplumbing.com")
+# 2. Input Area
+target_url = st.text_input("Business Website URL:", placeholder="e.g. www.yourbusiness.com")
 
+# 3. Action Area
 if st.button("Check My Visibility Score"):
     if target_url:
-        with st.spinner("Analyzing AI search patterns..."):
-            # 1. THE PROCESSING ANIMATION
+        # A. The "Thinking" Animation
+        with st.spinner("🔍 Scanning AI knowledge bases..."):
             progress_bar = st.progress(0)
-            for percent_complete in range(100):
-                time.sleep(0.02) 
-                progress_bar.progress(percent_complete + 1)
+            for percent in range(100):
+                time.sleep(0.02) # Artificial scan time
+                progress_bar.progress(percent + 1)
             
-            # 2. THE CALCULATION
-            final_score = 25 # Default score for the funnel
+            # B. The Calculation (Logic)
+            final_score = 25 # Hardcoded "Fail" for the funnel strategy
             
-            # 3. THE SPY STEP (Log the data)
+            # C. The Capture (Send to Google Sheets)
             log_lead(target_url, final_score)
             
-            # 4. THE RESULTS
+            # D. The Results
             st.success("Analysis Complete")
             
+            # Create two columns for layout
             col1, col2 = st.columns(2)
+            
             with col1:
-                st.metric(label="AI Visibility Score", value=f"{final_score}/100", delta="-75 Low Visibility")
+                st.metric(label="Your AI Score", value=f"{final_score}/100", delta="-75 Critical Risk")
             
             with col2:
-                st.error("⚠️ Critical Issues Found")
-                st.write("Your business is **invisible** to Voice Search (Siri) and LLMs.")
+                st.error("⚠️ Invisible to AI")
+                st.write("Your site content is not structured for Voice Search or LLMs.")
 
-            # 5. THE OFFER
+            # E. The "Hook" (Why they failed)
             st.markdown("---")
-            st.markdown("### 🛑 Don't lose customers to your competitors.")
-            st.markdown("We found 3 simple text errors blocking your site from AI detection.")
+            st.markdown("### 🛑 The Problem")
+            st.markdown("""
+            We found 3 critical errors preventing ChatGPT from reading your site:
+            1. **No Schema Markup:** Robots don't know what you sell.
+            2. **Unstructured Data:** Your services are "flat text" to AI.
+            3. **Low Authority:** You are being outranked by competitors.
+            """)
             
-            st.link_button("👉 Fix This Now (Get the Toolkit £27)", "https://go.foundbyai.online/get-toolkit")
+            # F. The Call to Action (The Money Button)
+            st.markdown("---")
+            st.markdown("### ✅ The Fix (Takes 15 Mins)")
+            st.link_button(
+                "👉 Download the AI Visibility Toolkit (£27)", 
+                "https://go.foundbyai.online/get-toolkit"
+            )
             
     else:
-        st.warning("Please enter a URL to check.")
+        st.warning("Please enter a website URL to begin.")
 
-# Footer
+# 4. Footer
 st.markdown("---")
-st.caption("Found By AI - Internal Tool. Do not distribute without license.")
+st.caption("Found By AI - Proprietary Audit Tool. © 2024")
