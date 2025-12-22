@@ -21,7 +21,7 @@ st.set_page_config(
 GHL_WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/8I4dcdbVv5h8XxnqQ9Cg/webhook-trigger/e8d9672c-0b9a-40f6-bc7a-aa93dd78ee99"
 
 # 🔴 ACTION REQUIRED: PASTE YOUR GOOGLE SHEET URL BELOW
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1KZgBJZFGGeYciI3lgwnxnLe5LwWoJouuqod_ABAag7c/edit?gid=0#gid=0" 
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1KZgBJZFGGeYciI3lgwnxnLe5LwWoJouuqod_ABAag7c"
 
 # --- GOOGLE SHEETS LOGGING FUNCTION ---
 def log_lead_to_sheet(url, score):
