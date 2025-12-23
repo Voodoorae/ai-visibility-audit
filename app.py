@@ -20,19 +20,19 @@ st.set_page_config(
 # --- CONFIGURATION: WEBHOOKS & SHEETS ---
 GHL_WEBHOOK_URL = "https://services.leadconnectorhq.com/hooks/8I4dcdbVv5h8XxnqQ9Cg/webhook-trigger/e8d9672c-0b9a-40f6-bc7a-aa93dd78ee99"
 
-# 🔴 ACTION REQUIRED: PASTE YOUR GOOGLE SHEET URL BELOW
-SHEET_URL = "https://docs.google.com/spreadsheets/d/1KZgBJZFGGeYciI3lgwnxnLe5LwWoJouuqod_ABAag7c"
+# 🔴 CONFIGURATION: YOUR CLEAN SHEET URL
+SHEET_URL = "https://docs.google.com/spreadsheets/d/1KZgBJZFGGeYciI3lgwnxnLe5LwWoJouuqod_ABAag7c" 
 
-# --- GOOGLE SHEETS LOGGING FUNCTION ---
+# --- GOOGLE SHEETS LOGGING FUNCTION (SILENT MODE) ---
 def log_lead_to_sheet(url, score):
-    """Silently logs every scan to Google Sheets"""
+    """Silently logs every scan to Google Sheets without alerting the user"""
     try:
-        # Load credentials from Streamlit secrets
+        # Load credentials
         scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
         creds = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
         client = gspread.authorize(creds)
         
-        # Open sheet and append row
+        # Open sheet and append
         sheet = client.open_by_url(SHEET_URL).sheet1
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         sheet.append_row([timestamp, url, str(score), "Audit Run"])
@@ -79,7 +79,7 @@ def save_lead_to_ghl(name, email, url, score, verdict):
     try:
         payload = {"name": name, "email": email, "website": url, "customData": {"audit_score": score, "audit_verdict": verdict}}
         r = requests.post(GHL_WEBHOOK_URL, json=payload, timeout=5)
-        if r.status_code in [200, 201]: st.success(f"Email summary of results sent to {email}!")
+        if r.status_code in [200, 201]: st.success(f"Repair plan sent to {email}!")
         else: st.error("Sync error.")
     except: st.error("Connection failed.")
 
@@ -158,21 +158,21 @@ if "audit_results" in st.session_state:
         </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("<h3 style='text-align:center; color:#FFDA47; margin-top:20px;'>Email Me a Summary of My AI Gaps</h3>", unsafe_allow_html=True)
+    # 🟢 COPY CHANGE 1: "Get Your Repair Plan"
+    st.markdown("<h3 style='text-align:center; color:#FFDA47; margin-top:20px;'>Get Your Repair Plan</h3>", unsafe_allow_html=True)
+    
     with st.form("lead_form"):
         c1, c2 = st.columns(2)
         u_name, u_email = c1.text_input("Name"), c2.text_input("Email")
-        if st.form_submit_button("SEND SUMMARY EMAIL"):
+        if st.form_submit_button("SEND REPAIR PLAN"):
             if u_name and u_email: save_lead_to_ghl(u_name, u_email, st.session_state.current_url, res['score'], res['verdict'])
             else: st.error("Please provide name and email.")
 
-    # FIXED: Renders the horizontal line properly
     st.markdown("<hr style='border-color: #3E4658;'>", unsafe_allow_html=True)
     
-    # ACTION CTA
-    st.markdown('<a href="https://go.foundbyai.online/get-toolkit" class="amber-btn">CLICK HERE TO UNBLOCK YOUR BUSINESS:<br><span style="font-size:14px; font-weight:400;">VIEW THE 10-STEP ROADMAP TO 100%</span></a>', unsafe_allow_html=True)
+    # 🟢 COPY CHANGE 2: "FIX THIS SCORE"
+    st.markdown('<a href="https://go.foundbyai.online/get-toolkit" class="amber-btn">👉 CLICK HERE TO FIX THIS SCORE<br><span style="font-size:14px; font-weight:400;">(Instant Roadmap)</span></a>', unsafe_allow_html=True)
 
-    # UPDATED: Community language focusing on "tips and tweaks"
     st.markdown(f"""
         <div style='background-color: #2D3342; padding: 15px; border-radius: 8px; margin-top: 25px; text-align: center; border: 1px solid #3b5998;'>
             <p style='margin-bottom: 5px; color: #FFFFFF;'><strong>Stuck on a technical fix?</strong></p>
