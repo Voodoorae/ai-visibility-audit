@@ -306,7 +306,6 @@ def analyze_website(raw_url):
         return results
 
     except Exception:
-        # This EXCEPT block closes the TRY block started at the beginning of analyze_website
         return fallback_analysis(raw_url)
 
 # --- UI RENDER ---
@@ -358,19 +357,24 @@ if st.session_state.audit_data:
     score_color = data.get("color", "#FFDA47")
 
     # --- SCORE & FAILURE COUNT ---
+    # Prepare failure message separately to prevent HTML string breakage
+    fail_msg = ""
+    if data.get('fails', 0) > 0:
+        fail_msg = f"""
+        <div style="margin-top: 15px; font-weight: 700; color: #FF4B4B; font-size: 18px;">
+        ⚠️ YOU FAILED {data['fails']} OF {data['total_checks']} CRITICAL CHECKS
+        </div>
+        """
+
     html_score_card = f"""
     <div class="score-container" style="border-top: 5px solid {score_color};">
     <div class="score-label">AI VISIBILITY SCORE</div>
     <div class="score-circle">{data['score']}/100</div>
     <div class="verdict-text" style="color: {score_color};">{data['verdict']}</div>
+    {fail_msg}
+    </div>
     """
-    if data.get('fails', 0) > 0:
-        html_score_card += f"""
-        <div style="margin-top: 15px; font-weight: 700; color: #FF4B4B; font-size: 18px;">
-        ⚠️ YOU FAILED {data['fails']} OF {data['total_checks']} CRITICAL CHECKS
-        </div>
-        """
-    html_score_card += "</div>"
+    
     st.markdown(html_score_card, unsafe_allow_html=True)
 
     # --- VOICE WARNING ---
