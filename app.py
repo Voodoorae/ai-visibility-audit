@@ -357,43 +357,39 @@ if st.session_state.audit_data:
     score_color = data.get("color", "#FFDA47")
 
     # --- SCORE & FAILURE COUNT ---
-    # Prepare failure message separately to prevent HTML string breakage
+    # We remove indentation to prevent Streamlit from treating this as a code block
     fail_msg = ""
     if data.get('fails', 0) > 0:
-        fail_msg = f"""
-        <div style="margin-top: 15px; font-weight: 700; color: #FF4B4B; font-size: 18px;">
-        ⚠️ YOU FAILED {data['fails']} OF {data['total_checks']} CRITICAL CHECKS
-        </div>
-        """
+        fail_msg = f"""<div style="margin-top: 15px; font-weight: 700; color: #FF4B4B; font-size: 18px;">⚠️ YOU FAILED {data['fails']} OF {data['total_checks']} CRITICAL CHECKS</div>"""
 
     html_score_card = f"""
-    <div class="score-container" style="border-top: 5px solid {score_color};">
-    <div class="score-label">AI VISIBILITY SCORE</div>
-    <div class="score-circle">{data['score']}/100</div>
-    <div class="verdict-text" style="color: {score_color};">{data['verdict']}</div>
-    {fail_msg}
-    </div>
-    """
+<div class="score-container" style="border-top: 5px solid {score_color};">
+<div class="score-label">AI VISIBILITY SCORE</div>
+<div class="score-circle">{data['score']}/100</div>
+<div class="verdict-text" style="color: {score_color};">{data['verdict']}</div>
+{fail_msg}
+</div>
+"""
     
     st.markdown(html_score_card, unsafe_allow_html=True)
 
     # --- VOICE WARNING ---
     if data['score'] < 60:
         st.markdown(f"""
-        <div style="background-color: #3b1e1e; border: 1px solid #FF4B4B; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 20px;">
-        <span style="font-size: 24px;">⛔</span><br>
-        <strong style="color: #FF6B6B; font-size: 18px;">CRITICAL ALERT</strong><br>
-        <span style="color: #E0E0E0;">Your current score means your business is likely <strong>INVISIBLE</strong> to voice agents like <strong>Siri, Alexa, and Google Assistant</strong>.</span>
-        </div>
-        """, unsafe_allow_html=True)
+<div style="background-color: #3b1e1e; border: 1px solid #FF4B4B; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 20px;">
+<span style="font-size: 24px;">⛔</span><br>
+<strong style="color: #FF6B6B; font-size: 18px;">CRITICAL ALERT</strong><br>
+<span style="color: #E0E0E0;">Your current score means your business is likely <strong>INVISIBLE</strong> to voice agents like <strong>Siri, Alexa, and Google Assistant</strong>.</span>
+</div>
+""", unsafe_allow_html=True)
 
     if data["status"] == "blocked":
         st.markdown(f"""
-        <div class="blocked-msg">
-        We could verify your domain, but your firewall blocked our content scanner.<br>
-        <strong>If we are blocked, Siri & Alexa likely are too.</strong>
-        </div>
-        """, unsafe_allow_html=True)
+<div class="blocked-msg">
+We could verify your domain, but your firewall blocked our content scanner.<br>
+<strong>If we are blocked, Siri & Alexa likely are too.</strong>
+</div>
+""", unsafe_allow_html=True)
 
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
     st.markdown("<p style='color:#FFDA47; font-size:22px; text-align:center; font-weight:700; font-family:Spectral, serif;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
@@ -419,12 +415,12 @@ if st.session_state.audit_data:
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
     st.markdown("<h3 style='text-align: center; color: #FFDA47; margin-bottom: 5px;'>UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>", unsafe_allow_html=True)
     st.markdown("""
-    <p style='text-align: center; color: #fff; margin-bottom: 20px; font-size: 16px; line-height: 1.6;'>
-    You are missing critical AI signals.<br>
-    Get the <strong style='color: #FFDA47;'>Fast Fix Toolkit</strong> to unlock your visibility<br>
-    or get the <strong style='color: #FFDA47;'>Done For You Tune Up</strong> for a fast, hands off full fix.
-    </p>
-    """, unsafe_allow_html=True)
+<p style='text-align: center; color: #fff; margin-bottom: 20px; font-size: 16px; line-height: 1.6;'>
+You are missing critical AI signals.<br>
+Get the <strong style='color: #FFDA47;'>Fast Fix Toolkit</strong> to unlock your visibility<br>
+or get the <strong style='color: #FFDA47;'>Done For You Tune Up</strong> for a fast, hands off full fix.
+</p>
+""", unsafe_allow_html=True)
 
     b_col1, b_col2 = st.columns(2)
     with b_col1:
@@ -433,14 +429,14 @@ if st.session_state.audit_data:
         st.markdown("""<a href="https://go.foundbyai.online/tune-up/page" target="_blank" class="amber-btn">BOOK TUNE UP £150</a>""", unsafe_allow_html=True)
 
     st.markdown("""
-    <div style='background-color: #2D3342; padding: 20px; border-radius: 8px; margin-top: 30px; margin-bottom: 20px;'>
-    <div style='margin-bottom: 10px;'>✅ <strong>The Unblocker Guide:</strong> Remove AI crawler blockages.</div>
-    <div style='margin-bottom: 10px;'>✅ <strong>Accessibility Tags:</strong> Rank for Voice Search.</div>
-    <div style='margin-bottom: 10px;'>✅ <strong>Schema Generator:</strong> Tell AI exactly what you do.</div>
-    <div style='margin-bottom: 10px;'>✅ <strong>Copyright Script:</strong> Auto-update for Freshness.</div>
-    <div>✅ <strong>Privacy & GDPR:</strong> Build Trust with Agents.</div>
-    </div>
-    """, unsafe_allow_html=True)
+<div style='background-color: #2D3342; padding: 20px; border-radius: 8px; margin-top: 30px; margin-bottom: 20px;'>
+<div style='margin-bottom: 10px;'>✅ <strong>The Unblocker Guide:</strong> Remove AI crawler blockages.</div>
+<div style='margin-bottom: 10px;'>✅ <strong>Accessibility Tags:</strong> Rank for Voice Search.</div>
+<div style='margin-bottom: 10px;'>✅ <strong>Schema Generator:</strong> Tell AI exactly what you do.</div>
+<div style='margin-bottom: 10px;'>✅ <strong>Copyright Script:</strong> Auto-update for Freshness.</div>
+<div>✅ <strong>Privacy & GDPR:</strong> Build Trust with Agents.</div>
+</div>
+""", unsafe_allow_html=True)
 
     c1, c2, c3 = st.columns([1, 1, 1])
     def clear_form():
