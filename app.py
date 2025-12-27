@@ -306,6 +306,7 @@ def analyze_website(raw_url):
         return results
 
     except Exception:
+        # This EXCEPT block closes the TRY block started at the beginning of analyze_website
         return fallback_analysis(raw_url)
 
 # --- UI RENDER ---
@@ -393,7 +394,7 @@ if st.session_state.audit_data:
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
     st.markdown("<p style='color:#FFDA47; font-size:22px; text-align:center; font-weight:700; font-family:Spectral, serif;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
 
-    # --- UPDATED EMAIL FORM (FIXED BLANK LABELS) ---
+    # --- UPDATED EMAIL FORM ---
     with st.form(key='email_form'):
         c1, c2 = st.columns(2)
         with c1:
