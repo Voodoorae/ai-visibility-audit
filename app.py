@@ -282,9 +282,13 @@ def analyze_website(raw_url):
         # --- VERDICT LOGIC ---
         final_score = score + 25
         
-        # STRICT CEILING: Missing Schema = Max 55%
+        # STRICT CEILING 1: Missing Schema = Max 55%
         if schema_score == 0:
             final_score = min(final_score, 55)
+
+        # STRICT CEILING 2: Missing Voice Content = Max 75%
+        if voice_score == 0:
+            final_score = min(final_score, 75)
 
         # Standard Ceiling
         final_score = min(final_score, 100)
@@ -342,7 +346,8 @@ if not st.session_state.audit_data:
             st.markdown(f"<div class='signal-item'>✅ {sig}</div>", unsafe_allow_html=True)
 
 if submit and url:
-    if not re.match(r"^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$", url):
+    # Relaxed URL check: Just needs to contain a dot (e.g. "ethelsgem.com")
+    if "." not in url:
         st.error("Please enter a valid URL.")
         st.session_state.url_input = ""
     else:
@@ -356,26 +361,23 @@ if st.session_state.audit_data:
     data = st.session_state.audit_data
     score_color = data.get("color", "#FFDA47")
 
-    # --- SCORE & FAILURE COUNT ---
-    # We remove indentation to prevent Streamlit from treating this as a code block
+    # --- HTML FIX: NO INDENTATION TO PREVENT CODE BLOCK RENDER ---
     fail_msg = ""
     if data.get('fails', 0) > 0:
         fail_msg = f"""<div style="margin-top: 15px; font-weight: 700; color: #FF4B4B; font-size: 18px;">⚠️ YOU FAILED {data['fails']} OF {data['total_checks']} CRITICAL CHECKS</div>"""
 
-    html_score_card = f"""
+    st.markdown(f"""
 <div class="score-container" style="border-top: 5px solid {score_color};">
 <div class="score-label">AI VISIBILITY SCORE</div>
 <div class="score-circle">{data['score']}/100</div>
 <div class="verdict-text" style="color: {score_color};">{data['verdict']}</div>
 {fail_msg}
 </div>
-"""
-    
-    st.markdown(html_score_card, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
     # --- VOICE WARNING ---
     if data['score'] < 60:
-        st.markdown(f"""
+        st.markdown("""
 <div style="background-color: #3b1e1e; border: 1px solid #FF4B4B; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 20px;">
 <span style="font-size: 24px;">⛔</span><br>
 <strong style="color: #FF6B6B; font-size: 18px;">CRITICAL ALERT</strong><br>
@@ -384,7 +386,7 @@ if st.session_state.audit_data:
 """, unsafe_allow_html=True)
 
     if data["status"] == "blocked":
-        st.markdown(f"""
+        st.markdown("""
 <div class="blocked-msg">
 We could verify your domain, but your firewall blocked our content scanner.<br>
 <strong>If we are blocked, Siri & Alexa likely are too.</strong>
