@@ -318,7 +318,8 @@ with col2:
     if os.path.exists("logo.jpg"):
         st.image("logo.jpg", use_container_width=True)
     st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
-    st.markdown("<div class='sub-head'>Is your business visible to Google, Apple, Siri, Alexa, and AI Search Agents?</div>", unsafe_allow_html=True)
+    # UPDATED HEADLINE FOR MOBILE CONVERSION
+    st.markdown("<div class='sub-head'>Is your business invisible to Siri & AI?</div>", unsafe_allow_html=True)
 
 if "audit_data" not in st.session_state:
     st.session_state.audit_data = None
@@ -328,9 +329,11 @@ if "url_input" not in st.session_state:
 with st.form(key='audit_form'):
     col1, col2 = st.columns([3, 1])
     with col1:
-        url = st.text_input("Enter Website URL", placeholder="e.g. plumber-marketing.com", label_visibility="collapsed", key="url_field")
+        # UPDATED PLACEHOLDER FOR CLEARER INSTRUCTION
+        url = st.text_input("Enter Website URL", placeholder="Enter your website here...", label_visibility="collapsed", key="url_field")
     with col2:
-        submit = st.form_submit_button(label='RUN THE AUDIT')
+        # UPDATED BUTTON TEXT FOR GAMIFICATION
+        submit = st.form_submit_button(label='CHECK MY SCORE')
 
 # --- 8 SIGNALS SECTION ---
 if not st.session_state.audit_data:
@@ -424,7 +427,7 @@ or get the <strong style='color: #FFDA47;'>Done For You Tune Up</strong> for a f
 </p>
 """, unsafe_allow_html=True)
 
-    # --- ONE BUTTON AS REQUESTED ---
+    # --- SINGLE BUTTON AS REQUESTED ---
     st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
 
     st.markdown("""
