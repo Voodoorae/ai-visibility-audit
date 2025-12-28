@@ -318,8 +318,8 @@ with col2:
     if os.path.exists("logo.jpg"):
         st.image("logo.jpg", use_container_width=True)
     st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
-    # UPDATED HEADLINE FOR MOBILE CONVERSION
-    st.markdown("<div class='sub-head'>Is your business invisible to Siri & AI?</div>", unsafe_allow_html=True)
+    # UPDATED HEADLINE: NOW WITH NON-BREAKING SPACES TO KEEP 'SIRI & AI' TOGETHER
+    st.markdown("<div class='sub-head'>Is your business invisible to Siri&nbsp;&&nbsp;AI?</div>", unsafe_allow_html=True)
 
 if "audit_data" not in st.session_state:
     st.session_state.audit_data = None
@@ -329,10 +329,10 @@ if "url_input" not in st.session_state:
 with st.form(key='audit_form'):
     col1, col2 = st.columns([3, 1])
     with col1:
-        # UPDATED PLACEHOLDER FOR CLEARER INSTRUCTION
+        # UPDATED PLACEHOLDER
         url = st.text_input("Enter Website URL", placeholder="Enter your website here...", label_visibility="collapsed", key="url_field")
     with col2:
-        # UPDATED BUTTON TEXT FOR GAMIFICATION
+        # UPDATED BUTTON TEXT
         submit = st.form_submit_button(label='CHECK MY SCORE')
 
 # --- 8 SIGNALS SECTION ---
@@ -349,7 +349,7 @@ if not st.session_state.audit_data:
             st.markdown(f"<div class='signal-item'>✅ {sig}</div>", unsafe_allow_html=True)
 
 if submit and url:
-    # Relaxed URL check: Just needs to contain a dot (e.g. "ethelsgem.com")
+    # Relaxed URL check
     if "." not in url:
         st.error("Please enter a valid URL.")
         st.session_state.url_input = ""
