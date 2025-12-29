@@ -1,8 +1,8 @@
 streamlit
+pandas
 requests
 beautifulsoup4
-urllib3
-fpdf
-pandas
 gspread
-google-auth
+oauth2client
+fpdf
+urllib3
