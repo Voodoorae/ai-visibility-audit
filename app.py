@@ -8,6 +8,8 @@ import urllib3
 import json
 import os
 import pandas as pd
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 # --- SAFE IMPORT FOR PDF GENERATION ---
 try:
@@ -134,6 +136,50 @@ div[data-testid="stMarkdownContainer"] p {
 </style>
 """, unsafe_allow_html=True)
 
+# --- GOOGLE SHEETS HELPER FUNCTION (7 Columns) ---
+def save_to_google_sheet(name, email, url, score, verdict):
+    """Saves data to the 'Found By AI Leads' Google Sheet."""
+    try:
+        # 1. Check if Secrets are configured
+        if "gcp_service_account" not in st.secrets:
+            # Silent fail or warning if running locally without secrets
+            return False
+
+        # 2. Authenticate
+        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+        creds_dict = st.secrets["gcp_service_account"]
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+        client = gspread.authorize(creds)
+
+        # 3. Open Sheet
+        sheet_name = "Found By AI Leads"
+        try:
+            sheet = client.open(sheet_name).sheet1
+        except gspread.exceptions.SpreadsheetNotFound:
+            st.error(f"❌ Error: Sheet '{sheet_name}' not found. Please check the Google Sheet name.")
+            return False
+
+        # 4. Prepare Data (7 Columns: DATE, NAME, EMAIL, URL, SCORE, VERDICT, DM)
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        row_data = [
+            timestamp,       # Col 1: DATE
+            str(name),       # Col 2: NAME
+            str(email),      # Col 3: EMAIL
+            str(url),        # Col 4: URL
+            str(score),      # Col 5: SCORE
+            str(verdict),    # Col 6: VERDICT
+            "Pending"        # Col 7: DM
+        ]
+
+        # 5. Append
+        sheet.append_row(row_data)
+        return True
+
+    except Exception as e:
+        st.error(f"⚠️ Google Sheet Error: {e}")
+        return False
+
 # --- DATA HANDLER ---
 LEADS_FILE = "leads.csv"
 
@@ -144,6 +190,7 @@ def load_leads():
         return pd.DataFrame(columns=["Timestamp", "Name", "Email", "URL", "Score", "Verdict", "AuditData", "Sent"])
 
 def save_lead(name, email, url, score, verdict, audit_data):
+    # 1. Save to Local CSV
     df = load_leads()
     new_entry = {
         "Timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -153,6 +200,10 @@ def save_lead(name, email, url, score, verdict, audit_data):
     df = pd.concat([df, pd.DataFrame([new_entry])], ignore_index=True)
     df.to_csv(LEADS_FILE, index=False)
 
+    # 2. Save to Google Sheet (UPDATED with Name & Email)
+    save_to_google_sheet(name, email, url, score, verdict)
+
+    # 3. Send to GoHighLevel Webhook
     if "PASTE_YOUR_GHL" not in GHL_WEBHOOK_URL:
         try:
             report_lines = []
@@ -281,7 +332,8 @@ def analyze_website(raw_url):
 
         # --- VERDICT LOGIC ---
         final_score = score + 25
-        
+        fails = total_checks - checks_passed
+
         # STRICT CEILING 1: Missing Schema = Max 55%
         if schema_score == 0:
             final_score = min(final_score, 55)
@@ -290,12 +342,17 @@ def analyze_website(raw_url):
         if voice_score == 0:
             final_score = min(final_score, 75)
 
+        # NEW: THE PERFECTION CAP
+        # If you fail ANY check, you cannot get higher than 85.
+        if fails > 0:
+            final_score = min(final_score, 85)
+
         # Standard Ceiling
         final_score = min(final_score, 100)
 
         if final_score < 60:
             results["verdict"], results["color"], results["summary"] = "INVISIBLE TO AI", "#FF4B4B", "Your site is failing core visibility checks."
-        elif final_score < 81:
+        elif final_score < 86:
             results["verdict"], results["color"], results["summary"] = "PARTIALLY VISIBLE", "#FFDA47", "You are visible, but your site is missing critical Identity Chips."
         else:
             results["verdict"], results["color"], results["summary"] = "AI READY", "#28A745", "Excellent work! Your website is technically ready."
@@ -304,7 +361,7 @@ def analyze_website(raw_url):
         results["breakdown"]["SSL Security"] = {"points": 10, "max": 10, "note": "✅ SSL Certificate valid."}
 
         results["score"] = final_score
-        results["fails"] = total_checks - checks_passed
+        results["fails"] = fails
         results["total_checks"] = total_checks
         
         return results
@@ -413,6 +470,7 @@ We could verify your domain, but your firewall blocked our content scanner.<br>
 
     if get_pdf:
         if name and email and "@" in email:
+            # SAVES TO GOOGLE SHEET WITH NAME & EMAIL
             save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
         else:
             st.error("Please enter your name and valid email.")
