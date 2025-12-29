@@ -46,7 +46,7 @@ h1 { color: #FFDA47 !important; font-family: 'Spectral', serif !important; font-
 .signals-header { text-align: center; color: #FFDA47; font-size: 18px; font-weight: 600; margin-bottom: 15px; font-family: 'Inter', sans-serif; }
 div[data-testid="stButton"] > button { background-color: #FFDA47 !important; color: #000000 !important; font-weight: 900 !important; border-radius: 8px !important; height: 50px !important; }
 input.stTextInput { background-color: #2D3342 !important; color: #FFFFFF !important; border: 1px solid #4A5568 !important; }
-.amber-btn { display: block; background-color: #FFDA47; color: #000000; font-weight: 900; border-radius: 8px; height: 55px; width: 100%; text-align: center; line-height: 55px; text-decoration: none; font-family: 'Inter', sans-serif; margin-top: 20px; }
+.amber-btn { display: block; background-color: #FFDA47; color: #000000; font-weight: 900; border-radius: 8px; height: 55px; width: 100%; text-align: center; line-height: 55px; text-decoration: none; font-family: 'Inter', sans-serif; margin-top: 10px; }
 .score-container { background-color: #252B3B; border-radius: 15px; padding: 20px; text-align: center; margin-top: 10px; margin-bottom: 20px; border: 1px solid #3E4658; }
 .score-circle { font-size: 36px !important; font-weight: 800; line-height: 1; margin-bottom: 5px; color: #FFDA47; font-family: 'Spectral', serif; }
 .verdict-text { font-size: 20px; font-weight: 800; margin-top: 5px; font-family: 'Spectral', serif; }
@@ -184,7 +184,6 @@ def analyze_website(raw_url):
         results["score"] = final_score
         results["fails"] = fails
         results["total_checks"] = total_checks
-        
         return results
 
     except Exception:
@@ -208,10 +207,15 @@ if "audit_data" not in st.session_state: st.session_state.audit_data = None
 
 with st.form(key='audit_form'):
     col1, col2 = st.columns([3, 1])
-    with col1: url = st.text_input("Enter Website URL", placeholder="Enter your website here...", label_visibility="collapsed")
-    with col2: submit = st.form_submit_button(label='CHECK MY SCORE')
+    # VISIBILITY FIX: Label is now visible so users know what to type
+    with col1: url = st.text_input("Enter Website URL", placeholder="example.com", label_visibility="visible")
+    with col2: 
+        st.write("") # Spacer to align button
+        st.write("") 
+        submit = st.form_submit_button(label='CHECK MY SCORE')
 
-# --- 8 SIGNALS SECTION (RESTORED) ---
+# --- 8 SIGNALS SECTION (RESTORED & VISIBLE) ---
+# This ensures the page isn't empty on first load
 if not st.session_state.audit_data:
     st.markdown("<div class='explainer-text'>Is your site blocking AI scanners? Are you visible to Google, Apple, and Alexa voice agents?<br><strong>Find out how visible you really are.</strong></div>", unsafe_allow_html=True)
     st.markdown("<div class='signals-header'>8 Critical Signals Required for AI Visibility</div>", unsafe_allow_html=True)
@@ -235,11 +239,11 @@ if submit and url:
             save_to_google_sheet("Anonymous Scan", "N/A", url, data['score'], data['verdict'])
             st.rerun()
 
-# --- SHOW RESULTS (FIXED BREAKDOWN) ---
+# --- SHOW RESULTS (OPTIMIZED LAYOUT) ---
 if st.session_state.audit_data:
     data = st.session_state.audit_data
     
-    # 1. SCORE CARD
+    # 1. SCORE CARD (THE HOOK)
     st.markdown(f"""
     <div class="score-container" style="border-top: 5px solid {data.get('color', '#FFDA47')};">
     <div class="score-label">AI VISIBILITY SCORE</div>
@@ -248,58 +252,44 @@ if st.session_state.audit_data:
     </div>
     """, unsafe_allow_html=True)
     
-    # 2. CRITICAL ALERT BOX
-    if isinstance(data['score'], int) and data['score'] < 60:
-         st.markdown(f"""
-        <div style="background-color: #3b1e1e; border: 1px solid #FF4B4B; border-radius: 8px; padding: 15px; text-align: center; margin-bottom: 20px;">
-        <span style="font-size: 24px;">⛔</span><br>
-        <strong style="color: #FF6B6B; font-size: 18px;">CRITICAL ALERT</strong><br>
-        <span style="color: #E0E0E0;">Your score means your business is likely <strong>INVISIBLE</strong> to voice agents.</span>
-        </div>
-        """, unsafe_allow_html=True)
-    elif data['score'] == "N/A":
-        st.markdown(f"""
-        <div class="blocked-msg">
-        <strong>Audit Inconclusive:</strong> This site uses enterprise security or is a Search Engine/Platform.
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # 3. DETAILED BREAKDOWN (RESTORED)
-    if 'breakdown' in data and data['breakdown']:
-        st.markdown("<h3 style='text-align: center; margin-bottom: 20px;'>Audit Breakdown</h3>", unsafe_allow_html=True)
-        for key, val in data['breakdown'].items():
-            status_icon = "✅" if val['points'] == val['max'] else "⚠️" if val['points'] > 0 else "❌"
-            border_color = "#28A745" if val['points'] == val['max'] else "#FF4B4B"
-            
-            st.markdown(f"""
-            <div style="background-color: #2D3342; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid {border_color};">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div style="font-weight: 700; font-size: 16px;">{status_icon} {key}</div>
-                    <div style="font-weight: 700; color: #FFDA47;">{val['points']}/{val['max']}</div>
-                </div>
-                <div style="color: #B0B0B0; font-size: 14px; margin-top: 5px;">{val['note']}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    # 4. EMAIL FORM
-    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#FFDA47; font-size:22px; text-align:center; font-weight:700; font-family:Spectral, serif;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
+    # 2. EMAIL FORM (THE LEAD CAPTURE - PRIORITIZED)
+    st.markdown("<p style='color:#FFDA47; font-size:18px; text-align:center; font-weight:700; margin-bottom: 10px;'>📩 Email me the Full Report & Technical Fixes</p>", unsafe_allow_html=True)
     
     with st.form(key='email_form'):
         c1, c2 = st.columns(2)
         with c1: name = st.text_input("Name")
         with c2: email = st.text_input("Email")
-        get_pdf = st.form_submit_button("EMAIL ME MY REPORT")
+        get_pdf = st.form_submit_button("SEND MY REPORT")
 
     if get_pdf:
         if name and email:
             save_to_google_sheet(name, email, url, data['score'], data['verdict'])
-            st.success("Report Sent!")
+            st.success("Report Sent! Check your inbox.")
             
-    # 5. CTA BUTTON
-    st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
+    # 3. CTA BUTTON (THE UPSELL)
+    st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">🚀 CLICK HERE TO FIX YOUR SCORE NOW</a>""", unsafe_allow_html=True)
     
-    # 6. RESET
+    # 4. DETAILED BREAKDOWN (COLLAPSED TO SAVE SPACE)
+    # This solves the "Too much text" issue
+    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+    with st.expander("🔽 View Detailed Audit Breakdown"):
+        if 'breakdown' in data and data['breakdown']:
+            for key, val in data['breakdown'].items():
+                status_icon = "✅" if val['points'] == val['max'] else "⚠️" if val['points'] > 0 else "❌"
+                border_color = "#28A745" if val['points'] == val['max'] else "#FF4B4B"
+                
+                st.markdown(f"""
+                <div style="background-color: #2D3342; padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid {border_color};">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="font-weight: 700; font-size: 16px;">{status_icon} {key}</div>
+                        <div style="font-weight: 700; color: #FFDA47;">{val['points']}/{val['max']}</div>
+                    </div>
+                    <div style="color: #B0B0B0; font-size: 14px; margin-top: 5px;">{val['note']}</div>
+                </div>
+                """, unsafe_allow_html=True)
+    
+    # 5. RESET
+    st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
     c1, c2, c3 = st.columns([1, 1, 1])
     def clear_form():
         st.session_state.audit_data = None
