@@ -47,6 +47,7 @@ input.stTextInput { background-color: #2D3342 !important; color: #FFFFFF !import
 .score-container { background-color: #252B3B; border-radius: 15px; padding: 20px; text-align: center; margin-top: 10px; margin-bottom: 20px; border: 1px solid #3E4658; }
 .score-circle { font-size: 36px !important; font-weight: 800; line-height: 1; margin-bottom: 5px; color: #FFDA47; font-family: 'Spectral', serif; }
 .verdict-text { font-size: 20px; font-weight: 800; margin-top: 5px; font-family: 'Spectral', serif; }
+.url-display { font-size: 14px; font-weight: 600; color: #B0B0B0; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
 .signal-item { background-color: #2D3342; padding: 10px; border-radius: 6px; margin-bottom: 10px; font-family: 'Inter', sans-serif; font-size: 14px; color: #E0E0E0; border-left: 3px solid #28A745; }
 </style>
 """, unsafe_allow_html=True)
@@ -76,7 +77,7 @@ def save_to_google_sheet(name, email, url, score, verdict):
 
 # --- ANALYSIS ENGINE ---
 def analyze_website(raw_url):
-    results = {"score": 0, "verdict": "", "color": "", "breakdown": {}}
+    results = {"score": 0, "verdict": "", "color": "", "breakdown": {}, "scanned_url": raw_url}
     checks_passed = 0
     total_checks = 6
     
@@ -161,10 +162,11 @@ def analyze_website(raw_url):
         else: results["verdict"], results["color"] = "AI READY", "#28A745"
         
         results["score"] = score
+        results["scanned_url"] = clean_url # Pass clean URL for display
         return results
 
     except:
-        return {"score": "N/A", "verdict": "SECURITY BLOCK", "color": "#FFDA47", "breakdown": {}}
+        return {"score": "N/A", "verdict": "SECURITY BLOCK", "color": "#FFDA47", "breakdown": {}, "scanned_url": raw_url}
 
 # --- MAIN UI LOGIC ---
 if "audit_data" not in st.session_state:
@@ -187,7 +189,6 @@ if st.session_state.audit_data is None:
         with c1: 
             url_input = st.text_input("Website URL", placeholder="example.com", label_visibility="visible")
         with c2: 
-            # ALIGNMENT FIX: This spacer pushes the button down to match the text input label
             st.markdown("<div style='height: 28px'></div>", unsafe_allow_html=True)
             submit_btn = st.form_submit_button("CHECK MY SCORE")
     
@@ -217,19 +218,20 @@ if st.session_state.audit_data is None:
 else:
     data = st.session_state.audit_data
     
-    # 1. SCORE CARD
+    # 1. SCORE CARD (UPDATED WITH URL)
     st.markdown(f"""
     <div class="score-container" style="border-top: 5px solid {data['color']};">
+    <div class="url-display">AUDIT FOR: {data.get('scanned_url', 'UNKNOWN SITE')}</div>
     <div class="score-label">AI VISIBILITY SCORE</div>
     <div class="score-circle">{data['score']}</div>
     <div class="verdict-text" style="color: {data['color']};">{data['verdict']}</div>
     </div>
     """, unsafe_allow_html=True)
     
-    # 2. UPSELL CTA (NO EMOJI)
+    # 2. UPSELL CTA
     st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
 
-    # 3. BREAKDOWN (Expander)
+    # 3. BREAKDOWN
     st.markdown("<br>", unsafe_allow_html=True)
     with st.expander("🔽 Click to see what you failed"):
         if 'breakdown' in data:
@@ -242,9 +244,8 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
 
-    # 4. EMAIL FORM (Backup)
+    # 4. EMAIL FORM
     st.markdown("<hr style='border-color: #3E4658;'>", unsafe_allow_html=True)
-    # PSYCHOLOGICAL SAFETY NET TEXT
     st.markdown("<p style='text-align:center; font-size:16px; color:#B0B0B0;'>Not ready to fix it yet? Save this report for your developer:</p>", unsafe_allow_html=True)
     
     with st.form("lead_form"):
@@ -255,7 +256,7 @@ else:
         
     if send_btn:
         if name and email:
-            save_to_google_sheet(name, email, "Scanned URL", data['score'], data['verdict'])
+            save_to_google_sheet(name, email, data.get('scanned_url', 'URL'), data['score'], data['verdict'])
             st.success("Report Sent! Check your inbox.")
 
     # 5. RESET
