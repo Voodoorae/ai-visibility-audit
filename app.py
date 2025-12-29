@@ -305,4 +305,3 @@ else:
     if st.button("🔄 CHECK A COMPETITOR'S SCORE"):
         st.session_state.audit_data = None
         st.rerun()
-      
