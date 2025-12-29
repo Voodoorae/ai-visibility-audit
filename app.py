@@ -85,11 +85,17 @@ def analyze_website(raw_url):
     if clean_url.endswith("/"): clean_url = clean_url[:-1]
     
     try:
-        headers = {'User-Agent': 'Mozilla/5.0 (compatible; FoundByAI/1.0)'}
+        # STEALTH HEADERS (Looks like Chrome to bypass firewalls)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        }
+        
         response = None
+        # FAST TIMEOUT: 3 Seconds per attempt. Speed is crucial.
         for proto in [f"https://{clean_url}", f"https://www.{clean_url}", f"http://{clean_url}"]:
             try:
-                r = requests.get(proto, headers=headers, timeout=2.5, verify=False)
+                r = requests.get(proto, headers=headers, timeout=3, verify=False)
                 if r.status_code == 200:
                     response = r
                     break
@@ -143,16 +149,11 @@ def analyze_website(raw_url):
         score += val
         results["breakdown"]["Local Signals"] = {"points": val, "max": 10, "note": "Checked Phone Number"}
 
-        # Scoring
+        # Scoring Logic
         fails = total_checks - checks_passed
         if fails > 0: score -= (fails * 10)
         
-        if score < 15:
-            results["verdict"] = "AUDIT RESTRICTED"
-            results["color"] = "#7D8B99"
-            results["score"] = "N/A"
-            return results
-
+        # Ceilings
         if not schemas: score = min(score, 55)
         if not has_voice: score = min(score, 75)
         score = max(10, min(score, 100))
@@ -162,7 +163,7 @@ def analyze_website(raw_url):
         else: results["verdict"], results["color"] = "AI READY", "#28A745"
         
         results["score"] = score
-        results["scanned_url"] = clean_url # Pass clean URL for display
+        results["scanned_url"] = clean_url 
         return results
 
     except:
@@ -189,6 +190,7 @@ if st.session_state.audit_data is None:
         with c1: 
             url_input = st.text_input("Website URL", placeholder="example.com", label_visibility="visible")
         with c2: 
+            # Spacer for alignment
             st.markdown("<div style='height: 28px'></div>", unsafe_allow_html=True)
             submit_btn = st.form_submit_button("CHECK MY SCORE")
     
@@ -218,7 +220,7 @@ if st.session_state.audit_data is None:
 else:
     data = st.session_state.audit_data
     
-    # 1. SCORE CARD (UPDATED WITH URL)
+    # 1. SCORE CARD
     st.markdown(f"""
     <div class="score-container" style="border-top: 5px solid {data['color']};">
     <div class="url-display">AUDIT FOR: {data.get('scanned_url', 'UNKNOWN SITE')}</div>
@@ -228,10 +230,10 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # 2. UPSELL CTA
+    # 2. UPSELL CTA (High Priority)
     st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
 
-    # 3. BREAKDOWN
+    # 3. BREAKDOWN (Expander)
     st.markdown("<br>", unsafe_allow_html=True)
     with st.expander("🔽 Click to see what you failed"):
         if 'breakdown' in data:
@@ -244,7 +246,7 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
 
-    # 4. EMAIL FORM
+    # 4. EMAIL FORM (Backup)
     st.markdown("<hr style='border-color: #3E4658;'>", unsafe_allow_html=True)
     st.markdown("<p style='text-align:center; font-size:16px; color:#B0B0B0;'>Not ready to fix it yet? Save this report for your developer:</p>", unsafe_allow_html=True)
     
