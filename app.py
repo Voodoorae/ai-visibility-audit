@@ -15,7 +15,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 st.set_page_config(page_title="Found By AI", page_icon="👁️", layout="centered", initial_sidebar_state="collapsed")
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# --- CSS STYLING (Fixed Buttons) ---
+# --- CSS STYLING ---
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;800&display=swap');
@@ -187,8 +187,8 @@ if st.session_state.audit_data is None:
         with c1: 
             url_input = st.text_input("Website URL", placeholder="example.com", label_visibility="visible")
         with c2: 
-            st.write("")
-            st.write("")
+            # ALIGNMENT FIX: This spacer pushes the button down to match the text input label
+            st.markdown("<div style='height: 28px'></div>", unsafe_allow_html=True)
             submit_btn = st.form_submit_button("CHECK MY SCORE")
     
     st.markdown("<div class='explainer-text'>Is your site blocking AI scanners? Are you visible to Google, Apple, and Alexa voice agents?<br><strong>Find out how visible you really are.</strong></div>", unsafe_allow_html=True)
@@ -226,8 +226,8 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # 2. UPSELL CTA (High Priority)
-    st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">🚀 CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
+    # 2. UPSELL CTA (NO EMOJI)
+    st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
 
     # 3. BREAKDOWN (Expander)
     st.markdown("<br>", unsafe_allow_html=True)
@@ -244,7 +244,8 @@ else:
 
     # 4. EMAIL FORM (Backup)
     st.markdown("<hr style='border-color: #3E4658;'>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; font-size:16px; color:#B0B0B0;'>Want a copy of this report?</p>", unsafe_allow_html=True)
+    # PSYCHOLOGICAL SAFETY NET TEXT
+    st.markdown("<p style='text-align:center; font-size:16px; color:#B0B0B0;'>Not ready to fix it yet? Save this report for your developer:</p>", unsafe_allow_html=True)
     
     with st.form("lead_form"):
         c1, c2 = st.columns(2)
