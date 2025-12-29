@@ -250,6 +250,7 @@ else:
     """, unsafe_allow_html=True)
     
     # 2. UPSELL CTA (TOP - NO ROCKET EMOJI)
+    # The onclick feedback remains to assure them it's loading, but text is clean.
     st.markdown("""
     <a href="https://go.foundbyai.online/get-toolkit" 
        target="_blank" 
@@ -274,18 +275,21 @@ else:
 
     # 4. EMAIL FORM (Backup)
     st.markdown("<hr style='border-color: #3E4658; margin-top:30px;'>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; font-size:16px; color:#B0B0B0;'>Not ready to fix it yet? Save this report for your developer:</p>", unsafe_allow_html=True)
+    # High Value "Thud" Text
+    st.markdown("<p style='text-align:center; font-size:16px; color:#B0B0B0;'>Need to show this to your web team?<br><strong>Get the Official Technical PDF:</strong></p>", unsafe_allow_html=True)
     
     with st.form("lead_form"):
         c1, c2 = st.columns(2)
         with c1: name = st.text_input("Name", placeholder="Enter your name")
         with c2: email = st.text_input("Email", placeholder="Enter your email")
-        send_btn = st.form_submit_button("SEND REPORT")
+        # HIGH VALUE BUTTON TEXT
+        send_btn = st.form_submit_button("SEND OFFICIAL AUDIT & TECHNICAL ROADMAP")
         
     if send_btn:
         if name and email:
             save_to_google_sheet(name, email, data.get('scanned_url', 'URL'), data['score'], data['verdict'])
-            st.success("Report Sent! Check your inbox.")
+            # Success message reinforces the "Roadmap" concept
+            st.success("✅ Roadmap Sent! While you check your inbox, click the button below to start fixing these errors.")
 
     # 5. UPSELL CTA 2 (BOTTOM - THE ADDITION)
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
