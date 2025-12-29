@@ -15,7 +15,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 st.set_page_config(page_title="Found By AI", page_icon="👁️", layout="centered", initial_sidebar_state="collapsed")
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# --- CSS STYLING ---
+# --- CSS STYLING (Fixed Buttons) ---
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;800&display=swap');
@@ -25,9 +25,25 @@ h1 { color: #FFDA47 !important; font-family: 'Spectral', serif !important; font-
 .sub-head { text-align: center; color: #FFFFFF; font-size: 20px; margin-bottom: 25px; font-family: 'Inter', sans-serif; }
 .explainer-text { text-align: center; color: #B0B0B0; font-size: 16px; margin-bottom: 30px; font-family: 'Inter', sans-serif; max-width: 600px; margin-left: auto; margin-right: auto;}
 .signals-header { text-align: center; color: #FFDA47; font-size: 18px; font-weight: 600; margin-bottom: 15px; font-family: 'Inter', sans-serif; }
-div[data-testid="stButton"] > button { background-color: #FFDA47 !important; color: #000000 !important; font-weight: 900 !important; border-radius: 8px !important; height: 50px !important; }
+
+/* FORCE BUTTONS TO BE AMBER WITH BLACK TEXT */
+div[data-testid="stButton"] > button, 
+div[data-testid="stFormSubmitButton"] > button { 
+    background-color: #FFDA47 !important; 
+    color: #000000 !important; 
+    font-weight: 900 !important; 
+    border-radius: 8px !important; 
+    height: 50px !important; 
+    border: none !important;
+}
+div[data-testid="stButton"] > button:hover, 
+div[data-testid="stFormSubmitButton"] > button:hover {
+    opacity: 0.9;
+    color: #000000 !important;
+}
+
 input.stTextInput { background-color: #2D3342 !important; color: #FFFFFF !important; border: 1px solid #4A5568 !important; }
-.amber-btn { display: block; background-color: #FFDA47; color: #000000; font-weight: 900; border-radius: 8px; height: 55px; width: 100%; text-align: center; line-height: 55px; text-decoration: none; font-family: 'Inter', sans-serif; margin-top: 10px; }
+.amber-btn { display: block; background-color: #FFDA47; color: #000000; font-weight: 900; border-radius: 8px; height: 55px; width: 100%; text-align: center; line-height: 55px; text-decoration: none; font-family: 'Inter', sans-serif; margin-top: 10px; margin-bottom: 20px;}
 .score-container { background-color: #252B3B; border-radius: 15px; padding: 20px; text-align: center; margin-top: 10px; margin-bottom: 20px; border: 1px solid #3E4658; }
 .score-circle { font-size: 36px !important; font-weight: 800; line-height: 1; margin-bottom: 5px; color: #FFDA47; font-family: 'Spectral', serif; }
 .verdict-text { font-size: 20px; font-weight: 800; margin-top: 5px; font-family: 'Spectral', serif; }
@@ -64,12 +80,10 @@ def analyze_website(raw_url):
     checks_passed = 0
     total_checks = 6
     
-    # Clean URL
     clean_url = raw_url.strip().replace("https://", "").replace("http://", "").replace("www.", "")
     if clean_url.endswith("/"): clean_url = clean_url[:-1]
     
     try:
-        # Fast Connection (2.5s timeout)
         headers = {'User-Agent': 'Mozilla/5.0 (compatible; FoundByAI/1.0)'}
         response = None
         for proto in [f"https://{clean_url}", f"https://www.{clean_url}", f"http://{clean_url}"]:
@@ -82,7 +96,6 @@ def analyze_website(raw_url):
             
         if not response: raise ConnectionError("Failed")
 
-        # Parse
         soup = BeautifulSoup(response.content, 'html.parser')
         text = soup.get_text().lower()
         score = 0
@@ -131,16 +144,14 @@ def analyze_website(raw_url):
 
         # Scoring
         fails = total_checks - checks_passed
-        if fails > 0: score -= (fails * 10) # Strict Penalty
+        if fails > 0: score -= (fails * 10)
         
-        # Unscorable Trap
         if score < 15:
             results["verdict"] = "AUDIT RESTRICTED"
             results["color"] = "#7D8B99"
             results["score"] = "N/A"
             return results
 
-        # Ceilings
         if not schemas: score = min(score, 55)
         if not has_voice: score = min(score, 75)
         score = max(10, min(score, 100))
@@ -159,7 +170,7 @@ def analyze_website(raw_url):
 if "audit_data" not in st.session_state:
     st.session_state.audit_data = None
 
-# HEADER (Always Visible)
+# HEADER
 col1, col2, col3 = st.columns([1,2,1])
 with col2:
     if os.path.exists("logo.jpg"): st.image("logo.jpg", use_container_width=True)
@@ -167,11 +178,10 @@ with col2:
     st.markdown("<div class='sub-head'>Is your business invisible to Siri&nbsp;&&nbsp;AI?</div>", unsafe_allow_html=True)
 
 # ----------------------------
-# STATE 1: LANDING PAGE (No Scan Yet)
+# STATE 1: LANDING PAGE
 # ----------------------------
 if st.session_state.audit_data is None:
     
-    # 1. THE SEARCH FORM
     with st.form(key='audit_form'):
         c1, c2 = st.columns([3, 1])
         with c1: 
@@ -181,7 +191,6 @@ if st.session_state.audit_data is None:
             st.write("")
             submit_btn = st.form_submit_button("CHECK MY SCORE")
     
-    # 2. THE 8 SIGNALS (Always visible on landing)
     st.markdown("<div class='explainer-text'>Is your site blocking AI scanners? Are you visible to Google, Apple, and Alexa voice agents?<br><strong>Find out how visible you really are.</strong></div>", unsafe_allow_html=True)
     st.markdown("<div class='signals-header'>8 Critical Signals Required for AI Visibility</div>", unsafe_allow_html=True)
     c1, c2 = st.columns(2)
@@ -192,25 +201,23 @@ if st.session_state.audit_data is None:
         for s in ["Accessibility", "SSL Security", "Mobile Ready", "Entity Clarity"]:
             st.markdown(f"<div class='signal-item'>✅ {s}</div>", unsafe_allow_html=True)
 
-    # 3. PROCESS SUBMISSION
     if submit_btn and url_input:
         if "." not in url_input:
             st.error("Please enter a valid URL (e.g., example.com)")
         else:
             with st.spinner("Scanning..."):
                 st.session_state.audit_data = analyze_website(url_input)
-                # Save Anonymous Lead
                 d = st.session_state.audit_data
                 save_to_google_sheet("Anonymous", "N/A", url_input, d['score'], d['verdict'])
                 st.rerun()
 
 # ----------------------------
-# STATE 2: RESULTS PAGE (Scan Complete)
+# STATE 2: RESULTS PAGE
 # ----------------------------
 else:
     data = st.session_state.audit_data
     
-    # 1. SCORE CARD (Top)
+    # 1. SCORE CARD
     st.markdown(f"""
     <div class="score-container" style="border-top: 5px solid {data['color']};">
     <div class="score-label">AI VISIBILITY SCORE</div>
@@ -219,23 +226,10 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # 2. EMAIL FORM (Middle - Priority)
-    st.markdown("<p style='text-align:center; font-size:18px; color:#FFDA47; font-weight:bold;'>📩 Email me the Full Report & Fixes</p>", unsafe_allow_html=True)
-    with st.form("lead_form"):
-        c1, c2 = st.columns(2)
-        with c1: name = st.text_input("Name")
-        with c2: email = st.text_input("Email")
-        send_btn = st.form_submit_button("SEND REPORT")
-        
-    if send_btn:
-        if name and email:
-            save_to_google_sheet(name, email, "Scanned URL", data['score'], data['verdict'])
-            st.success("Report Sent! Check your inbox.")
-    
-    # 3. UPSELL CTA (Bottom)
+    # 2. UPSELL CTA (High Priority)
     st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">🚀 CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
 
-    # 4. BREAKDOWN (Hidden in Expander)
+    # 3. BREAKDOWN (Expander)
     st.markdown("<br>", unsafe_allow_html=True)
     with st.expander("🔽 Click to see what you failed"):
         if 'breakdown' in data:
@@ -248,7 +242,22 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
 
-    # 5. RESET BUTTON
+    # 4. EMAIL FORM (Backup)
+    st.markdown("<hr style='border-color: #3E4658;'>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; font-size:16px; color:#B0B0B0;'>Want a copy of this report?</p>", unsafe_allow_html=True)
+    
+    with st.form("lead_form"):
+        c1, c2 = st.columns(2)
+        with c1: name = st.text_input("Name", placeholder="Enter your name")
+        with c2: email = st.text_input("Email", placeholder="Enter your email")
+        send_btn = st.form_submit_button("SEND REPORT")
+        
+    if send_btn:
+        if name and email:
+            save_to_google_sheet(name, email, "Scanned URL", data['score'], data['verdict'])
+            st.success("Report Sent! Check your inbox.")
+
+    # 5. RESET
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("🔄 START NEW SCAN"):
         st.session_state.audit_data = None
