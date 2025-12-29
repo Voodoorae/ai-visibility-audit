@@ -43,7 +43,8 @@ div[data-testid="stFormSubmitButton"] > button:hover {
 }
 
 input.stTextInput { background-color: #2D3342 !important; color: #FFFFFF !important; border: 1px solid #4A5568 !important; }
-.amber-btn { display: block; background-color: #FFDA47; color: #000000; font-weight: 900; border-radius: 8px; height: 55px; width: 100%; text-align: center; line-height: 55px; text-decoration: none; font-family: 'Inter', sans-serif; margin-top: 10px; margin-bottom: 20px;}
+.amber-btn { display: block; background-color: #FFDA47; color: #000000; font-weight: 900; border-radius: 8px; height: 55px; width: 100%; text-align: center; line-height: 55px; text-decoration: none; font-family: 'Inter', sans-serif; margin-top: 10px; margin-bottom: 20px; transition: all 0.2s;}
+.amber-btn:active { transform: scale(0.98); background-color: #e6c200; }
 .score-container { background-color: #252B3B; border-radius: 15px; padding: 20px; text-align: center; margin-top: 10px; margin-bottom: 20px; border: 1px solid #3E4658; }
 .score-circle { font-size: 36px !important; font-weight: 800; line-height: 1; margin-bottom: 5px; color: #FFDA47; font-family: 'Spectral', serif; }
 .verdict-text { font-size: 20px; font-weight: 800; margin-top: 5px; font-family: 'Spectral', serif; }
@@ -248,8 +249,16 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # 2. UPSELL CTA (High Priority)
-    st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
+    # 2. UPSELL CTA (WITH VISUAL FEEDBACK)
+    # The 'onclick' ensures immediate feedback while GHL loads
+    st.markdown("""
+    <a href="https://go.foundbyai.online/get-toolkit" 
+       target="_blank" 
+       class="amber-btn" 
+       onclick="this.innerHTML='🚀 OPENING TOOLKIT...'; this.style.backgroundColor='#e6c200';">
+       CLICK HERE TO FIX YOUR SCORE
+    </a>
+    """, unsafe_allow_html=True)
 
     # 3. BREAKDOWN (Expander)
     st.markdown("<br>", unsafe_allow_html=True)
