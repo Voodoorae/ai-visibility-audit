@@ -152,8 +152,6 @@ def save_to_google_sheet(name, email, url, score, verdict):
         client = gspread.authorize(creds)
 
         # 3. Open Sheet
-        # TEMPORARY DEBUG: Show me the email I need to share with
-        st.write(f"DEBUG: Please share the sheet with this email: {creds.service_account_email}")
         sheet_name = "Found By AI Leads"
         
         try:
