@@ -331,24 +331,22 @@ def analyze_website(raw_url):
         score += loc_score
 
         # --- VERDICT LOGIC ---
-        final_score = score + 25
+        final_score = score + 25 # Base points for Server/SSL
         fails = total_checks - checks_passed
 
-        # STRICT CEILING 1: Missing Schema = Max 55%
+        # PENALTY SYSTEM: -10 points for every failed check
+        if fails > 0:
+            penalty = fails * 10
+            final_score = final_score - penalty
+
+        # STRICT CEILINGS
         if schema_score == 0:
             final_score = min(final_score, 55)
-
-        # STRICT CEILING 2: Missing Voice Content = Max 75%
         if voice_score == 0:
             final_score = min(final_score, 75)
 
-        # NEW: THE PERFECTION CAP
-        # If you fail ANY check, you cannot get higher than 85.
-        if fails > 0:
-            final_score = min(final_score, 85)
-
-        # Standard Ceiling
-        final_score = min(final_score, 100)
+        # Standard bounds (0 to 100)
+        final_score = max(0, min(final_score, 100))
 
         if final_score < 60:
             results["verdict"], results["color"], results["summary"] = "INVISIBLE TO AI", "#FF4B4B", "Your site is failing core visibility checks."
@@ -414,7 +412,14 @@ if submit and url:
         st.session_state.url_input = url
         with st.spinner("Scanning..."):
             time.sleep(1)
+            # 1. RUN ANALYSIS
             st.session_state.audit_data = analyze_website(url)
+            
+            # 2. AUTO-SAVE TO SHEET (Anonymous Capture)
+            # This ensures EVERY usage is recorded, even if they don't give email.
+            data = st.session_state.audit_data
+            save_to_google_sheet("Anonymous", "N/A", url, data['score'], data['verdict'])
+            
             st.rerun()
 
 if st.session_state.audit_data:
