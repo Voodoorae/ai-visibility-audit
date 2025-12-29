@@ -239,7 +239,7 @@ if st.session_state.audit_data is None:
 else:
     data = st.session_state.audit_data
     
-    # 1. SCORE CARD (UPDATED WITH URL)
+    # 1. SCORE CARD
     st.markdown(f"""
     <div class="score-container" style="border-top: 5px solid {data['color']};">
     <div class="url-display">AUDIT FOR: {data.get('scanned_url', 'UNKNOWN SITE')}</div>
@@ -249,7 +249,7 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # 2. UPSELL CTA (High Priority)
+    # 2. UPSELL CTA (TOP)
     st.markdown("""
     <a href="https://go.foundbyai.online/get-toolkit" 
        target="_blank" 
@@ -298,7 +298,18 @@ else:
             save_to_google_sheet(name, email, data.get('scanned_url', 'URL'), data['score'], data['verdict'])
             st.success("✅ Audit Sent! While you check your inbox, click the button above to fix these errors immediately.")
 
-    # 5. COMPETITOR SPY (FULL WIDTH BUTTON)
+    # 5. UPSELL CTA 2 (BOTTOM - RESTORED)
+    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+    st.markdown("""
+    <a href="https://go.foundbyai.online/get-toolkit" 
+       target="_blank" 
+       class="amber-btn" 
+       onclick="this.innerHTML='🚀 OPENING TOOLKIT...'; this.style.backgroundColor='#e6c200';">
+       CLICK HERE TO FIX YOUR SCORE
+    </a>
+    """, unsafe_allow_html=True)
+
+    # 6. COMPETITOR SPY (FULL WIDTH BUTTON)
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("🔄 CHECK A COMPETITOR'S SCORE", use_container_width=True):
         st.session_state.audit_data = None
