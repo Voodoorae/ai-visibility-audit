@@ -249,46 +249,60 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # 2. UPSELL CTA (WITH VISUAL FEEDBACK)
+    # 2. UPSELL CTA (High Priority)
+    # Added "Get the Toolkit" subtext to make it concrete
     st.markdown("""
     <a href="https://go.foundbyai.online/get-toolkit" 
        target="_blank" 
        class="amber-btn" 
        onclick="this.innerHTML='🚀 OPENING TOOLKIT...'; this.style.backgroundColor='#e6c200';">
        CLICK HERE TO FIX YOUR SCORE
+       <br><span style="font-size:12px; font-weight:400;">(Get the Schema & Unblocker Toolkit)</span>
     </a>
     """, unsafe_allow_html=True)
 
-    # 3. BREAKDOWN (VISIBLE - NO EXPANDER)
+    # 3. BREAKDOWN (The Pain Scroll)
     st.markdown("<h4 style='text-align:center; color:#B0B0B0; margin-bottom:15px; font-family:Inter;'>Audit Breakdown</h4>", unsafe_allow_html=True)
     
     if 'breakdown' in data:
         for k, v in data['breakdown'].items():
             icon = "✅" if v['points'] > 0 else "❌"
             color = "#28A745" if v['points'] > 0 else "#FF4B4B"
+            # Added "CRITICAL" badge to failures to increase agitation
+            badge = ""
+            if v['points'] == 0:
+                badge = " <span style='background:#FF4B4B; color:black; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-left:8px;'>CRITICAL FAIL</span>"
+                
             st.markdown(f"""
             <div style="border-left: 5px solid {color}; padding: 10px; background: #2D3342; margin-bottom: 5px;">
-            <strong>{icon} {k}</strong><br><small style="color:#B0B0B0">{v['note']}</small>
+            <div style="display:flex; align-items:center;">
+                <strong>{icon} {k}</strong> {badge}
+            </div>
+            <small style="color:#B0B0B0">{v['note']}</small>
             </div>
             """, unsafe_allow_html=True)
 
-    # 4. EMAIL FORM (Backup)
+    # 4. EMAIL FORM (The "Thud" Factor)
     st.markdown("<hr style='border-color: #3E4658; margin-top:30px;'>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; font-size:16px; color:#B0B0B0;'>Not ready to fix it yet? Save this report for your developer:</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center; font-size:16px; color:#B0B0B0;'>Need to show this to your web team?<br><strong>Get the Official Technical PDF:</strong></p>", unsafe_allow_html=True)
     
     with st.form("lead_form"):
         c1, c2 = st.columns(2)
         with c1: name = st.text_input("Name", placeholder="Enter your name")
         with c2: email = st.text_input("Email", placeholder="Enter your email")
-        send_btn = st.form_submit_button("SEND REPORT")
+        # Renamed button to increase perceived value
+        send_btn = st.form_submit_button("SEND OFFICIAL AUDIT")
         
     if send_btn:
         if name and email:
             save_to_google_sheet(name, email, data.get('scanned_url', 'URL'), data['score'], data['verdict'])
-            st.success("Report Sent! Check your inbox.")
+            # THE BRIDGE: Selling while confirming
+            st.success("✅ Audit Sent! While you check your inbox, click the button above to fix these errors immediately.")
 
-    # 5. RESET
+    # 5. COMPETITOR SPY (Viral Loop)
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🔄 START NEW SCAN"):
+    # Changed text to encourage comparing scores
+    if st.button("🔄 CHECK A COMPETITOR'S SCORE"):
         st.session_state.audit_data = None
         st.rerun()
+      
