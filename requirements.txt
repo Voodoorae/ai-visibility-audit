@@ -1,8 +1,6 @@
 streamlit
-pandas
 requests
 beautifulsoup4
 gspread
 oauth2client
-fpdf
 urllib3
