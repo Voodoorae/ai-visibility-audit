@@ -1,19 +1,12 @@
 import streamlit as st
-import requests
-from bs4 import BeautifulSoup
-import re
 import time
 import datetime
-import urllib3
-import json
+import re
 import os
-import pandas as pd
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
+import json
 
 # --- CONFIGURATION ---
 st.set_page_config(page_title="Found By AI", page_icon="👁️", layout="centered", initial_sidebar_state="collapsed")
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- CSS STYLING ---
 st.markdown("""
@@ -52,8 +45,12 @@ input.stTextInput { background-color: #2D3342 !important; color: #FFFFFF !import
 </style>
 """, unsafe_allow_html=True)
 
-# --- GOOGLE SHEETS FUNCTION ---
+# --- GOOGLE SHEETS FUNCTION (LAZY LOADED) ---
 def save_to_google_sheet(name, email, url, score, verdict):
+    # Heavy imports moved inside function to speed up app load
+    import gspread
+    from oauth2client.service_account import ServiceAccountCredentials
+    
     try:
         if "gcp_service_account" not in st.secrets: return False
         scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -92,7 +89,14 @@ def fallback_analysis(url):
         }
     }
 
+# --- ANALYSIS ENGINE (LAZY LOADED) ---
 def analyze_website(raw_url):
+    # Imports moved here to speed up initial page load
+    import requests
+    from bs4 import BeautifulSoup
+    import urllib3
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
     results = {"score": 0, "verdict": "", "color": "", "breakdown": {}, "scanned_url": raw_url}
     checks_passed = 0
     total_checks = 6
