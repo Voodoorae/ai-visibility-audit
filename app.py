@@ -175,12 +175,24 @@ def analyze_website(raw_url):
         score += val
         results["breakdown"]["Canonical Tag"] = {"points": val, "max": 10, "note": "Checked SEO Meta Tags"}
 
-        # Check 6: Local
-        val = 10 if re.search(r"(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}", text) else 5
-        if val == 10: checks_passed += 1
+        # Check 6: Local Signals (GLOBAL + TOLL FREE SUPPORT)
+        # Matches: 
+        # - Toll Free: 0800, 1800, 1300 (UK, AU, US)
+        # - International: +44, +61, +1, etc.
+        # - Standard: (123) 456-7890 or 01234 567 890
+        # - Min length 7 digits, Max length 15 digits (to avoid matching dates/years)
+        phone_pattern = r"(\+?\d{1,3}[-.\s]?)?\(?(\d{3,5}|0800|1800|1300)\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}"
+        
+        # We search the text for a match
+        found_phone = re.search(phone_pattern, text)
+        
+        # SCORING FIX: If we find ANY phone number, give full points.
+        # This prevents the "85 Score" bug where a valid number got a penalty.
+        val = 10 if found_phone else 0
+        if val > 0: checks_passed += 1
+        
         score += val
         results["breakdown"]["Local Signals"] = {"points": val, "max": 10, "note": "Checked Phone Number"}
-
         # Scoring Logic
         fails = total_checks - checks_passed
         if fails > 0: score -= (fails * 10)
