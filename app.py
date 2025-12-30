@@ -45,31 +45,41 @@ input.stTextInput { background-color: #2D3342 !important; color: #FFFFFF !import
 </style>
 """, unsafe_allow_html=True)
 
-# --- GOOGLE SHEETS FUNCTION (LAZY LOADED) ---
-def save_to_google_sheet(name, email, url, score, verdict):
-    # Heavy imports moved inside function to speed up app load
+# --- CACHED CONNECTION (THE STABILITY FIX) ---
+@st.cache_resource
+def get_gspread_client():
+    """Establishes a persistent connection to Google Sheets"""
     import gspread
     from oauth2client.service_account import ServiceAccountCredentials
     
+    if "gcp_service_account" not in st.secrets:
+        return None
+
+    scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+    creds_dict = st.secrets["gcp_service_account"]
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    return gspread.authorize(creds)
+
+def save_to_google_sheet(name, email, url, score, verdict):
     try:
-        if "gcp_service_account" not in st.secrets: return False
-        scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-        creds_dict = st.secrets["gcp_service_account"]
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
-        client = gspread.authorize(creds)
+        client = get_gspread_client()
+        if not client: return False
         
         sheet_name = "Found By AI Leads" 
         try:
             sheet = client.open(sheet_name).sheet1
-        except gspread.exceptions.SpreadsheetNotFound:
-            st.error(f"❌ Error: Sheet '{sheet_name}' not found. Please share with: {creds.service_account_email}")
-            return False
+        except Exception:
+            # Fallback: try to clear cache and reconnect if connection dropped
+            st.cache_resource.clear()
+            client = get_gspread_client()
+            sheet = client.open(sheet_name).sheet1
 
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         sheet.append_row([timestamp, str(name), str(email), str(url), str(score), str(verdict), "Pending"])
         return True
     except Exception as e:
-        st.error(f"Database Error: {e}")
+        # Silently fail or log to console so user experience isn't broken
+        print(f"Sheet Error: {e}")
         return False
 
 # --- FAIL-SAFE ENGINE ---
@@ -89,9 +99,8 @@ def fallback_analysis(url):
         }
     }
 
-# --- ANALYSIS ENGINE (LAZY LOADED) ---
+# --- ANALYSIS ENGINE ---
 def analyze_website(raw_url):
-    # Imports moved here to speed up initial page load
     import requests
     from bs4 import BeautifulSoup
     import urllib3
