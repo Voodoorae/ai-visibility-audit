@@ -98,7 +98,7 @@ def fallback_analysis(url):
         }
     }
 
-# --- ANALYSIS ENGINE (TRULY GLOBAL FIX) ---
+# --- ANALYSIS ENGINE (SUPER-REGEX + LOGIC FIX) ---
 def analyze_website(raw_url):
     import requests
     from bs4 import BeautifulSoup
@@ -140,11 +140,11 @@ def analyze_website(raw_url):
         # Check 1: Schema
         schemas = soup.find_all('script', type='application/ld+json')
         val = 30 if schemas else 0
-        if val > 0: checks_passed += 1 
+        if val > 0: checks_passed += 1 # LOGIC FIX: Any points = Pass
         score += val
         results["breakdown"]["Schema Markup"] = {"points": val, "max": 30, "note": "Checked JSON-LD Code"}
 
-        # Check 2: Voice Headers (INCLUDES HELP, WHAT, WHY, WHO)
+        # Check 2: Voice Headers (EXPANDED + 'HELP')
         h_tags = soup.find_all(['h1', 'h2', 'h3'])
         q_words = ['how', 'cost', 'price', 'where', 'faq', 'what', 'who', 'why', 'when', 'best', 'tips', 'guide', 'help']
         has_voice = any(any(q in h.get_text().lower() for q in q_words) for h in h_tags)
@@ -173,22 +173,22 @@ def analyze_website(raw_url):
         score += val
         results["breakdown"]["Canonical Tag"] = {"points": val, "max": 10, "note": "Checked SEO Meta Tags"}
 
-        # Check 6: Local Signals (TRULY GLOBAL FIX)
+        # Check 6: Local Signals (SUPER-REGEX FIX)
         # Matches:
-        # - International: +27, +81, +44, +1
-        # - Local: Starts with 0 (UK, SA, JP, AU)
-        # - Area Codes: 2 digits (03 Japan, 02 Aus) to 5 digits
-        # - Toll Free: 0800, 1300, 1800
-        phone_pattern = r"(\+?\d{1,3}[-.\s]?)?\(?(\d{2,5}|0800|1800|1300)\)?[-.\s]?\d{3,4}[-.\s]?\d{3,5}"
+        # - 0800, 1800, 1300 followed by digits/spaces
+        # - +44, 07, 01, 02 prefixes
+        # - Catches mixed spacing (e.g. 0800 68 90 880)
+        phone_pattern = r"(\b(?:0800|1800|1300|\+44|0\d{2,4})[\s.-]?[\d\s.-]{6,15}\b)"
         found_phone = re.search(phone_pattern, text)
         val = 10 if found_phone else 0
         
-        if val > 0: checks_passed += 1 # Pass if any number found
+        if val > 0: checks_passed += 1 # Pass if ANY number found
         score += val
         results["breakdown"]["Local Signals"] = {"points": val, "max": 10, "note": "Checked Phone Number"}
 
         # Scoring Logic
         fails = total_checks - checks_passed
+        # LOGIC FIX: Only subtract penalty if it's a TRUE fail (val=0)
         if fails > 0: score -= (fails * 10)
         
         # Ceilings
