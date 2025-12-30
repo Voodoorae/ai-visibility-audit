@@ -343,3 +343,7 @@ else:
     if st.button("🔄 CHECK A COMPETITOR'S SCORE", use_container_width=True):
         st.session_state.audit_data = None
         st.rerun()
+
+
+# Force Update 1
+# Force Update 2
