@@ -249,14 +249,13 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # 2. UPSELL CTA (TOP)
+    # 2. UPSELL CTA (TOP - CLEAN & FIXED)
     st.markdown("""
     <a href="https://go.foundbyai.online/get-toolkit" 
        target="_blank" 
        class="amber-btn" 
        onclick="this.innerHTML='🚀 OPENING TOOLKIT...'; this.style.backgroundColor='#e6c200';">
        CLICK HERE TO FIX YOUR SCORE
-       <br><span style="font-size:12px; font-weight:400;">(Get the Schema & Unblocker Toolkit)</span>
     </a>
     """, unsafe_allow_html=True)
 
@@ -298,7 +297,7 @@ else:
             save_to_google_sheet(name, email, data.get('scanned_url', 'URL'), data['score'], data['verdict'])
             st.success("✅ Audit Sent! While you check your inbox, click the button above to fix these errors immediately.")
 
-    # 5. UPSELL CTA 2 (BOTTOM - RESTORED)
+    # 5. UPSELL CTA 2 (BOTTOM - SANDWICH STRATEGY)
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
     st.markdown("""
     <a href="https://go.foundbyai.online/get-toolkit" 
