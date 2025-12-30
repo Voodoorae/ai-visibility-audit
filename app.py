@@ -98,7 +98,7 @@ def fallback_analysis(url):
         }
     }
 
-# --- ANALYSIS ENGINE (AGGRESSIVE PHONE DETECTION) ---
+# --- ANALYSIS ENGINE (MULTI-CHANNEL CONTACT CHECK) ---
 def analyze_website(raw_url):
     import requests
     from bs4 import BeautifulSoup
@@ -173,21 +173,34 @@ def analyze_website(raw_url):
         score += val
         results["breakdown"]["Canonical Tag"] = {"points": val, "max": 10, "note": "Checked SEO Meta Tags"}
 
-        # Check 6: Local Signals (AGGRESSIVE MODE)
-        # 1. Look for specific prefixes (0800, +44, 07, 02, etc.)
-        # 2. Allow loose matching for the rest of the digits (spaces, dashes, dots)
-        # 3. This catches "0800 68 90 880" even if the spaces are weird
-        phone_pattern = r"(?:0800|1800|1300|\+44|0\d{1,4})[\s.-]?[0-9\s.-]{5,15}"
+        # Check 6: Contact Signals (PHONE OR EMAIL OR ADDRESS)
+        # 1. Phone Regex (Global)
+        phone_pattern = r"(\b(?:0800|1800|1300|\+44|0\d{2,4})[\s.-]?[\d\s.-]{6,15}\b)"
         found_phone = re.search(phone_pattern, text)
-        val = 10 if found_phone else 0
+        
+        # 2. Email Regex (Basic check)
+        email_pattern = r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}"
+        found_email = re.search(email_pattern, text)
+        
+        # 3. Postcode Regex (UK & US)
+        # Matches: SW1A 1AA or 90210
+        postcode_pattern = r"\b([a-z]{1,2}\d{1,2}[a-z]?\s*\d[a-z]{2}|[0-9]{5})\b"
+        found_postcode = re.search(postcode_pattern, text)
+
+        # 4. Context Keywords
+        local_keywords = ['call', 'tel:', 'contact', 'helpline', 'email', 'address', 'location']
+        found_keyword = any(kw in text for kw in local_keywords)
+        
+        # PASS if ANY contact signal is found
+        val = 10 if (found_phone or found_email or found_postcode or found_keyword) else 0
         
         if val > 0: checks_passed += 1 
         score += val
-        results["breakdown"]["Local Signals"] = {"points": val, "max": 10, "note": "Checked Phone Number"}
+        # Renamed note to reflect wider check
+        results["breakdown"]["Local Signals"] = {"points": val, "max": 10, "note": "Checked Phone, Email, or Address"}
 
         # Scoring Logic
         fails = total_checks - checks_passed
-        # Only penalize if it is a TRUE fail (val = 0)
         if fails > 0: score -= (fails * 10)
         
         # Ceilings
