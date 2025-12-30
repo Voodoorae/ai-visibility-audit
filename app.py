@@ -45,7 +45,7 @@ input.stTextInput { background-color: #2D3342 !important; color: #FFFFFF !import
 </style>
 """, unsafe_allow_html=True)
 
-# --- CACHED CONNECTION (THE STABILITY FIX) ---
+# --- CACHED CONNECTION (STABILITY FIX) ---
 @st.cache_resource
 def get_gspread_client():
     """Establishes a persistent connection to Google Sheets"""
@@ -78,7 +78,6 @@ def save_to_google_sheet(name, email, url, score, verdict):
         sheet.append_row([timestamp, str(name), str(email), str(url), str(score), str(verdict), "Pending"])
         return True
     except Exception as e:
-        # Silently fail or log to console so user experience isn't broken
         print(f"Sheet Error: {e}")
         return False
 
@@ -99,7 +98,7 @@ def fallback_analysis(url):
         }
     }
 
-# --- ANALYSIS ENGINE (LAZY LOADED & EXPANDED VOCAB) ---
+# --- ANALYSIS ENGINE (TRULY GLOBAL FIX) ---
 def analyze_website(raw_url):
     import requests
     from bs4 import BeautifulSoup
@@ -114,7 +113,7 @@ def analyze_website(raw_url):
     if clean_url.endswith("/"): clean_url = clean_url[:-1]
     
     try:
-        # STEALTH HEADERS (Bypass Firewalls)
+        # STEALTH HEADERS
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
@@ -131,7 +130,6 @@ def analyze_website(raw_url):
                     break
             except: continue
             
-        # IF BLOCKED/TIMEOUT -> TRIGGER FAIL-SAFE (Don't crash)
         if not response: 
             return fallback_analysis(clean_url)
 
@@ -142,16 +140,16 @@ def analyze_website(raw_url):
         # Check 1: Schema
         schemas = soup.find_all('script', type='application/ld+json')
         val = 30 if schemas else 0
-        if val: checks_passed += 1
+        if val > 0: checks_passed += 1 
         score += val
         results["breakdown"]["Schema Markup"] = {"points": val, "max": 30, "note": "Checked JSON-LD Code"}
 
-        # Check 2: Voice Headers (EXPANDED LIST FOR CHARITIES/SERVICES)
+        # Check 2: Voice Headers (INCLUDES HELP, WHAT, WHY, WHO)
         h_tags = soup.find_all(['h1', 'h2', 'h3'])
-        q_words = ['how', 'cost', 'price', 'where', 'faq', 'what', 'who', 'help', 'why', 'when', 'best', 'tips', 'guide']
+        q_words = ['how', 'cost', 'price', 'where', 'faq', 'what', 'who', 'why', 'when', 'best', 'tips', 'guide', 'help']
         has_voice = any(any(q in h.get_text().lower() for q in q_words) for h in h_tags)
         val = 20 if has_voice else 0
-        if val: checks_passed += 1
+        if val > 0: checks_passed += 1
         score += val
         results["breakdown"]["Voice Optimization"] = {"points": val, "max": 20, "note": "Checked Question Headers"}
 
@@ -159,40 +157,36 @@ def analyze_website(raw_url):
         imgs = soup.find_all('img')
         valid_imgs = sum(1 for i in imgs if i.get('alt'))
         val = 15 if not imgs or (valid_imgs/len(imgs) > 0.8) else 0
-        if val: checks_passed += 1
+        if val > 0: checks_passed += 1
         score += val
         results["breakdown"]["Image Accessibility"] = {"points": val, "max": 15, "note": "Checked Alt Tags"}
 
         # Check 4: Freshness
         val = 15 if str(datetime.datetime.now().year) in text else 0
-        if val: checks_passed += 1
+        if val > 0: checks_passed += 1
         score += val
         results["breakdown"]["Content Freshness"] = {"points": val, "max": 15, "note": "Checked Current Year"}
 
         # Check 5: Canonical
         val = 10 if soup.find('link', rel='canonical') else 0
-        if val: checks_passed += 1
+        if val > 0: checks_passed += 1
         score += val
         results["breakdown"]["Canonical Tag"] = {"points": val, "max": 10, "note": "Checked SEO Meta Tags"}
 
-        # Check 6: Local Signals (GLOBAL + TOLL FREE SUPPORT)
-        # Matches: 
-        # - Toll Free: 0800, 1800, 1300 (UK, AU, US)
-        # - International: +44, +61, +1, etc.
-        # - Standard: (123) 456-7890 or 01234 567 890
-        # - Min length 7 digits, Max length 15 digits (to avoid matching dates/years)
-        phone_pattern = r"(\+?\d{1,3}[-.\s]?)?\(?(\d{3,5}|0800|1800|1300)\)?[-.\s]?\d{3,4}[-.\s]?\d{3,4}"
-        
-        # We search the text for a match
+        # Check 6: Local Signals (TRULY GLOBAL FIX)
+        # Matches:
+        # - International: +27, +81, +44, +1
+        # - Local: Starts with 0 (UK, SA, JP, AU)
+        # - Area Codes: 2 digits (03 Japan, 02 Aus) to 5 digits
+        # - Toll Free: 0800, 1300, 1800
+        phone_pattern = r"(\+?\d{1,3}[-.\s]?)?\(?(\d{2,5}|0800|1800|1300)\)?[-.\s]?\d{3,4}[-.\s]?\d{3,5}"
         found_phone = re.search(phone_pattern, text)
-        
-        # SCORING FIX: If we find ANY phone number, give full points.
-        # This prevents the "85 Score" bug where a valid number got a penalty.
         val = 10 if found_phone else 0
-        if val > 0: checks_passed += 1
         
+        if val > 0: checks_passed += 1 # Pass if any number found
         score += val
         results["breakdown"]["Local Signals"] = {"points": val, "max": 10, "note": "Checked Phone Number"}
+
         # Scoring Logic
         fails = total_checks - checks_passed
         if fails > 0: score -= (fails * 10)
@@ -234,7 +228,6 @@ if st.session_state.audit_data is None:
         with c1: 
             url_input = st.text_input("Website URL", placeholder="example.com", label_visibility="visible")
         with c2: 
-            # ALIGNMENT FIX: Precise spacer to match label height + padding
             st.markdown("<div style='height: 28px'></div>", unsafe_allow_html=True)
             submit_btn = st.form_submit_button("CHECK MY SCORE")
     
