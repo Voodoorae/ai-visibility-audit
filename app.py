@@ -99,7 +99,7 @@ def fallback_analysis(url):
         }
     }
 
-# --- ANALYSIS ENGINE ---
+# --- ANALYSIS ENGINE (LAZY LOADED & EXPANDED VOCAB) ---
 def analyze_website(raw_url):
     import requests
     from bs4 import BeautifulSoup
@@ -146,9 +146,9 @@ def analyze_website(raw_url):
         score += val
         results["breakdown"]["Schema Markup"] = {"points": val, "max": 30, "note": "Checked JSON-LD Code"}
 
-        # Check 2: Voice Headers
+        # Check 2: Voice Headers (EXPANDED LIST FOR CHARITIES/SERVICES)
         h_tags = soup.find_all(['h1', 'h2', 'h3'])
-        q_words = ['how', 'cost', 'price', 'where', 'faq']
+        q_words = ['how', 'cost', 'price', 'where', 'faq', 'what', 'who', 'why', 'when', 'best', 'tips', 'guide']
         has_voice = any(any(q in h.get_text().lower() for q in q_words) for h in h_tags)
         val = 20 if has_voice else 0
         if val: checks_passed += 1
