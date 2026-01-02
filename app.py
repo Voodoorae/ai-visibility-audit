@@ -18,19 +18,19 @@ h1 { color: #FFDA47 !important; font-family: 'Spectral', serif !important; font-
 .sub-head { text-align: center; color: #FFFFFF; font-size: 20px; margin-bottom: 25px; font-family: 'Inter', sans-serif; }
 .explainer-text { text-align: center; color: #E0E0E0; font-size: 18px; margin-bottom: 20px; font-family: 'Inter', sans-serif; max-width: 650px; margin-left: auto; margin-right: auto; line-height: 1.4;}
 
-/* THE PAIN POINT ALERT */
-.pain-point { 
+/* THE CARRIE BOX (Educational, not scary) */
+.did-you-know { 
     text-align: center; 
-    color: #FF4B4B; 
+    color: #E0E0E0; 
     font-size: 16px; 
     margin-top: 15px; 
     margin-bottom: 30px; 
     font-family: 'Inter', sans-serif; 
-    font-weight: 700; 
+    font-weight: 500; 
     background: #2D3342; 
-    padding: 15px; 
+    padding: 20px; 
     border-radius: 8px; 
-    border: 1px solid #FF4B4B; 
+    border: 1px solid #4A5568; 
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
 }
 
@@ -265,11 +265,12 @@ with col2:
     if os.path.exists("logo.jpg"): st.image("logo.jpg", use_container_width=True)
     st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
     
-    # --- MOVED UP: HIGH IMPACT EXPLAINER ---
+    # --- MOVED UP: HIGH IMPACT EXPLAINER (CARRIE'S FIX) ---
+    # Focus on the issue (customers not finding you) rather than "blocking technology"
     st.markdown("""
     <div class='explainer-text'>
-    Is your website blocking <strong>ChatGPT, Gemini, and Perplexity</strong>?<br>
-    Are you visible to the AI agents your customers use every day?
+    When customers ask their phones to find a business...<br>
+    <strong>Does your website show up?</strong>
     </div>
     """, unsafe_allow_html=True)
 
@@ -288,10 +289,11 @@ if st.session_state.audit_data is None:
             # --- STRONGER CTA BUTTON ---
             submit_btn = st.form_submit_button("AM I INVISIBLE? (RUN FREE SCAN)")
 
-    # --- THE "SIRI" PAIN POINT (STYLED AS ALERT) ---
+    # --- THE "SIRI" EDUCATIONAL BOX (CARRIE'S WORDING) ---
     st.markdown("""
-    <div class='pain-point'>
-    ⚠️ <strong>REALITY CHECK:</strong> If Siri doesn't know you are open, she sends your customers to the shop down the road.
+    <div class='did-you-know'>
+    💡 <strong>DID YOU KNOW?</strong><br>
+    Remember voice agents like <strong>Siri and Alexa are AI</strong>. If you are not visible to AI, they won't be recommending your business.
     </div>
     """, unsafe_allow_html=True)
     
