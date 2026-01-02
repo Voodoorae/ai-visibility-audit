@@ -266,7 +266,6 @@ with col2:
     st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
     
     # --- MOVED UP: HIGH IMPACT EXPLAINER (CARRIE'S FIX) ---
-    # Focus on the issue (customers not finding you) rather than "blocking technology"
     st.markdown("""
     <div class='explainer-text'>
     When customers ask their phones to find a business...<br>
@@ -415,12 +414,12 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-    # 4. EMAIL FORM (UPDATED FOR NON-TECHNICAL USERS)
+    # 4. EMAIL FORM (UPDATED FOR ACCURACY)
     st.markdown("<hr style='border-color: #3E4658; margin-top:30px;'>", unsafe_allow_html=True)
     st.markdown("""
     <p style='text-align:center; font-size:16px; color:#E0E0E0; font-family: Inter;'>
-    Want to turn these <strong>Red Crosses</strong> into <strong>Green Ticks</strong>?<br>
-    Get the simple "Fix-It" checklist sent to your inbox.
+    Want to keep a copy of these results?<br>
+    <strong>Send the Official Score Report to your inbox.</strong>
     </p>
     """, unsafe_allow_html=True)
     
@@ -430,7 +429,7 @@ else:
         with c2: email = st.text_input("Email", placeholder="Your Best Email")
         
         # FULL WIDTH SUBMIT BUTTON
-        send_btn = st.form_submit_button("EMAIL ME THE FIX-IT LIST", use_container_width=True)
+        send_btn = st.form_submit_button("EMAIL ME THE REPORT", use_container_width=True)
         
     if send_btn:
         if name and email:
