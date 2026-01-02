@@ -34,7 +34,24 @@ h1 { color: #FFDA47 !important; font-family: 'Spectral', serif !important; font-
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
 }
 
-.signals-header { text-align: center; color: #FFDA47; font-size: 18px; font-weight: 600; margin-bottom: 15px; font-family: 'Inter', sans-serif; }
+/* CENTERED DASHBOARD HEADER */
+.dashboard-head {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.dashboard-head h3 {
+    color: #FFDA47;
+    font-family: 'Inter', sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0;
+}
+.dashboard-head p {
+    color: #E0E0E0;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px;
+    margin-top: 5px;
+}
 
 /* FORCE BUTTONS TO BE AMBER WITH BLACK TEXT */
 div[data-testid="stButton"] > button, 
@@ -269,7 +286,7 @@ if st.session_state.audit_data is None:
         with c2: 
             st.markdown("<div style='height: 28px'></div>", unsafe_allow_html=True)
             # --- STRONGER CTA BUTTON ---
-            submit_btn = st.form_submit_button("AM I INVISIBLE? (CHECK)")
+            submit_btn = st.form_submit_button("AM I INVISIBLE? (RUN FREE SCAN)")
 
     # --- THE "SIRI" PAIN POINT (STYLED AS ALERT) ---
     st.markdown("""
@@ -283,9 +300,9 @@ if st.session_state.audit_data is None:
     
     # 2. CENTERED TEXT CHANGE
     st.markdown("""
-    <div style="text-align: center; margin-bottom: 20px;">
-        <h3 style="color: #FFDA47; font-family: 'Inter', sans-serif; font-size: 20px;">📡 Analyzing 8 Critical Visibility Signals...</h3>
-        <p style="color: #E0E0E0; font-family: 'Inter', sans-serif;">We will test if these platforms can 'see' your business data.</p>
+    <div class="dashboard-head">
+        <h3>📡 Analyzing 8 Critical Visibility Signals...</h3>
+        <p>We will test if these platforms can 'see' your business data.</p>
     </div>
     """, unsafe_allow_html=True)
 
