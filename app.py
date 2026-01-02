@@ -413,17 +413,22 @@ else:
             </div>
             """, unsafe_allow_html=True)
 
-    # 4. EMAIL FORM (The "Thud" Factor)
+    # 4. EMAIL FORM (UPDATED FOR NON-TECHNICAL USERS)
     st.markdown("<hr style='border-color: #3E4658; margin-top:30px;'>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; font-size:16px; color:#B0B0B0;'>Need to show this to your web team?<br><strong>Get the Official Technical PDF:</strong></p>", unsafe_allow_html=True)
+    st.markdown("""
+    <p style='text-align:center; font-size:16px; color:#E0E0E0; font-family: Inter;'>
+    Want to turn these <strong>Red Crosses</strong> into <strong>Green Ticks</strong>?<br>
+    Get the simple "Fix-It" checklist sent to your inbox.
+    </p>
+    """, unsafe_allow_html=True)
     
     with st.form("lead_form"):
         c1, c2 = st.columns(2)
-        with c1: name = st.text_input("Name", placeholder="Enter your name")
-        with c2: email = st.text_input("Email", placeholder="Enter your email")
+        with c1: name = st.text_input("Name", placeholder="Your Name")
+        with c2: email = st.text_input("Email", placeholder="Your Best Email")
         
         # FULL WIDTH SUBMIT BUTTON
-        send_btn = st.form_submit_button("SEND OFFICIAL AUDIT & TECHNICAL ROADMAP", use_container_width=True)
+        send_btn = st.form_submit_button("EMAIL ME THE FIX-IT LIST", use_container_width=True)
         
     if send_btn:
         if name and email:
