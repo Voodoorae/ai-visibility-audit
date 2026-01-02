@@ -243,15 +243,60 @@ if st.session_state.audit_data is None:
             st.markdown("<div style='height: 28px'></div>", unsafe_allow_html=True)
             submit_btn = st.form_submit_button("CHECK MY SCORE")
     
-    st.markdown("<div class='explainer-text'>Is your site blocking AI scanners? Are you visible to Google, Apple, and Alexa voice agents?<br><strong>Find out how visible you really are.</strong></div>", unsafe_allow_html=True)
-    st.markdown("<div class='signals-header'>8 Critical Signals Required for AI Visibility</div>", unsafe_allow_html=True)
-    c1, c2 = st.columns(2)
-    with c1:
-        for s in ["Voice Readiness", "AI Crawler Access", "Schema Markup", "Content Freshness"]:
-            st.markdown(f"<div class='signal-item'>✅ {s}</div>", unsafe_allow_html=True)
-    with c2:
-        for s in ["Accessibility", "SSL Security", "Mobile Ready", "Entity Clarity"]:
-            st.markdown(f"<div class='signal-item'>✅ {s}</div>", unsafe_allow_html=True)
+    # --- UPDATED UX: DIAGNOSTIC DASHBOARD (Not Links) ---
+    st.divider()
+    st.subheader("📡 Analyzing 8 Critical Visibility Signals...")
+    st.write("We are checking if these platforms can 'see' your business data.")
+
+    # Create a Grid Layout (2 columns wide)
+    col1, col2 = st.columns(2)
+
+    # Column 1 Signals
+    with col1:
+        with st.container(border=True):
+            st.markdown("### 🗺️ Google Maps")
+            st.caption("Primary data source for 90% of local traffic.")
+            st.markdown("Status: **Scanning...**")
+        
+        with st.container(border=True):
+            st.markdown("### 🍎 Apple Maps (Siri)")
+            st.caption("Required for iPhone 'Siri, find a...' queries.")
+            st.markdown("Status: **Scanning...**")
+
+        with st.container(border=True):
+            st.markdown("### 🗣️ Voice Search")
+            st.caption("Amazon Alexa & Google Assistant data points.")
+            st.markdown("Status: **Scanning...**")
+            
+        with st.container(border=True):
+            st.markdown("### 🤖 Bing / ChatGPT")
+            st.caption("The database used by Microsoft Copilot & ChatGPT.")
+            st.markdown("Status: **Scanning...**")
+
+    # Column 2 Signals
+    with col2:
+        with st.container(border=True):
+            st.markdown("### 🔴 Yelp / Yahoo")
+            st.caption("Critical for high-intent service searches.")
+            st.markdown("Status: **Scanning...**")
+
+        with st.container(border=True):
+            st.markdown("### 📍 Facebook Local")
+            st.caption("Validation for Meta AI and Instagram maps.")
+            st.markdown("Status: **Scanning...**")
+
+        with st.container(border=True):
+            st.markdown("### 📱 Waze / TomTom")
+            st.caption("GPS data for car navigation systems.")
+            st.markdown("Status: **Scanning...**")
+
+        with st.container(border=True):
+            st.markdown("### 🔍 Schema Markup")
+            st.caption("The code that tells robots what you actually 'do'.")
+            st.markdown("Status: **Scanning...**")
+
+    st.info("ℹ️ **Why this matters:** If any of these are broken, AI agents cannot recommend you.")
+    # -----------------------------------------------------
 
     if submit_btn and url_input:
         if "." not in url_input:
@@ -259,90 +304,4 @@ if st.session_state.audit_data is None:
         else:
             with st.spinner("Scanning..."):
                 st.session_state.audit_data = analyze_website(url_input)
-                d = st.session_state.audit_data
-                save_to_google_sheet("Anonymous", "N/A", url_input, d['score'], d['verdict'])
-                st.rerun()
-
-# ----------------------------
-# STATE 2: RESULTS PAGE
-# ----------------------------
-else:
-    data = st.session_state.audit_data
-    
-    # 1. SCORE CARD
-    st.markdown(f"""
-    <div class="score-container" style="border-top: 5px solid {data['color']};">
-    <div class="url-display">AUDIT FOR: {data.get('scanned_url', 'UNKNOWN SITE')}</div>
-    <div class="score-label">AI VISIBILITY SCORE</div>
-    <div class="score-circle">{data['score']}</div>
-    <div class="verdict-text" style="color: {data['color']};">{data['verdict']}</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # 2. UPSELL CTA (TOP - CLEAN & FIXED)
-    st.markdown("""
-    <a href="https://go.foundbyai.online/get-toolkit" 
-       target="_blank" 
-       class="amber-btn" 
-       onclick="this.innerHTML='🚀 OPENING TOOLKIT...'; this.style.backgroundColor='#e6c200';">
-       CLICK HERE TO FIX YOUR SCORE
-    </a>
-    """, unsafe_allow_html=True)
-
-    # 3. BREAKDOWN (The Pain Scroll)
-    st.markdown("<h4 style='text-align:center; color:#B0B0B0; margin-bottom:15px; font-family:Inter;'>Audit Breakdown</h4>", unsafe_allow_html=True)
-    
-    if 'breakdown' in data:
-        for k, v in data['breakdown'].items():
-            icon = "✅" if v['points'] > 0 else "❌"
-            color = "#28A745" if v['points'] > 0 else "#FF4B4B"
-            # Critical Fail Badge
-            badge = ""
-            if v['points'] == 0:
-                badge = " <span style='background:#FF4B4B; color:black; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold; margin-left:8px;'>CRITICAL FAIL</span>"
-                
-            st.markdown(f"""
-            <div style="border-left: 5px solid {color}; padding: 10px; background: #2D3342; margin-bottom: 5px;">
-            <div style="display:flex; align-items:center;">
-                <strong>{icon} {k}</strong> {badge}
-            </div>
-            <small style="color:#B0B0B0">{v['note']}</small>
-            </div>
-            """, unsafe_allow_html=True)
-
-    # 4. EMAIL FORM (The "Thud" Factor)
-    st.markdown("<hr style='border-color: #3E4658; margin-top:30px;'>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center; font-size:16px; color:#B0B0B0;'>Need to show this to your web team?<br><strong>Get the Official Technical PDF:</strong></p>", unsafe_allow_html=True)
-    
-    with st.form("lead_form"):
-        c1, c2 = st.columns(2)
-        with c1: name = st.text_input("Name", placeholder="Enter your name")
-        with c2: email = st.text_input("Email", placeholder="Enter your email")
-        
-        # FULL WIDTH SUBMIT BUTTON
-        send_btn = st.form_submit_button("SEND OFFICIAL AUDIT & TECHNICAL ROADMAP", use_container_width=True)
-        
-    if send_btn:
-        if name and email:
-            save_to_google_sheet(name, email, data.get('scanned_url', 'URL'), data['score'], data['verdict'])
-            st.success("✅ Audit Sent! While you check your inbox, click the button above to fix these errors immediately.")
-
-    # 5. UPSELL CTA 2 (BOTTOM - SANDWICH STRATEGY)
-    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-    st.markdown("""
-    <a href="https://go.foundbyai.online/get-toolkit" 
-       target="_blank" 
-       class="amber-btn" 
-       onclick="this.innerHTML='🚀 OPENING TOOLKIT...'; this.style.backgroundColor='#e6c200';">
-       CLICK HERE TO FIX YOUR SCORE
-    </a>
-    """, unsafe_allow_html=True)
-
-    # 6. COMPETITOR SPY (FULL WIDTH BUTTON)
-    st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("🔄 CHECK A COMPETITOR'S SCORE", use_container_width=True):
-        st.session_state.audit_data = None
-        st.rerun()
-
-
-
+                d = st.session_
