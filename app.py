@@ -318,16 +318,26 @@ def fallback_analysis(url):
     }
 
 def smart_connect(raw_url):
-    raw_url = raw_url.strip()
-    clean_url = raw_url.replace("https://", "").replace("http://", "").replace("www.", "")
+    # ROBUST CLEANING: Remove http/s and www only from start
+    clean_url = raw_url.strip()
+    if clean_url.startswith("https://"): clean_url = clean_url[8:]
+    if clean_url.startswith("http://"): clean_url = clean_url[7:]
+    if clean_url.startswith("www."): clean_url = clean_url[4:]
     if clean_url.endswith("/"): clean_url = clean_url[:-1]
     
+    # Try multiple variations with a Real User Agent
     attempts = [f"https://{clean_url}", f"https://www.{clean_url}", f"http://{clean_url}", raw_url]
-    headers = {'User-Agent': 'Mozilla/5.0 (compatible; FoundByAI/1.0)', 'Accept': 'text/html'}
+    
+    # Chrome User Agent to avoid 403 blocks
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5'
+    }
     
     for url in attempts:
         try:
-            response = requests.get(url, headers=headers, timeout=10, verify=False)
+            response = requests.get(url, headers=headers, timeout=15, verify=False)
             if response.status_code == 200:
                 return response, url
         except: continue
@@ -347,8 +357,10 @@ def analyze_website(raw_url):
     results = {"score": 0, "status": "active", "breakdown": {}, "summary": "", "debug_error": ""}
     try:
         response, working_url = smart_connect(raw_url)
+        # Block only if explicitly 403 Forbidden AND no content (handled by exception mostly)
         if response.status_code in [403, 406, 429, 503]:
-            return fallback_analysis(raw_url)
+             return fallback_analysis(raw_url)
+             
         soup = BeautifulSoup(response.content, 'html.parser')
         text = soup.get_text().lower()
         score = 0
@@ -521,7 +533,8 @@ if not st.session_state.audit_data:
         else: final_url = url_bottom
         
     if final_url:
-        if not re.match(r"^(https?:\/\/)?(www\.)?[\w-]+\.[\w.-]+(\/.*)?$", final_url.strip()):
+        # SUPER RELAXED REGEX - Accepts almost anything that looks like a domain
+        if not re.match(r"^[\w\.-]+\.[\w\.-]+", final_url.strip()):
              st.error("Please enter a valid URL (e.g., example.com or https://example.com) to run the scan.")
         else:
             st.session_state.url_input = final_url
@@ -535,7 +548,7 @@ if st.session_state.audit_data:
     data = st.session_state.audit_data
     score_color = data.get("color", "#FFDA47")
 
-    # 1. SCORE CARD
+    # 1. SCORE CARD (FULL 1000px WIDTH)
     html_score_card = f"""
     <div class="score-container" style="border-top: 5px solid {score_color};">
     <div class="score-label">The result for {st.session_state.url_input} is</div>
@@ -554,7 +567,7 @@ if st.session_state.audit_data:
     st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
 
     # 4. BREAKDOWN CARDS (SANDWICH FILLING)
-    st.markdown("<h4 style='text-align: center; color: #E0E0E0; margin-bottom: 20px; margin-top: 20px;'>Your Technical Audit Breakdown</h4>", unsafe_allow_html=True)
+    st.markdown("<h4 style='text-align: center; color: #E0E0E0; margin-bottom: 20px; margin-top: 30px;'>Your Technical Audit Breakdown</h4>", unsafe_allow_html=True)
     b_col1, b_col2 = st.columns(2)
     items = list(data['breakdown'].items())
     for idx, (k, v) in enumerate(items):
