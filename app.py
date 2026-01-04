@@ -52,11 +52,11 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 .stApp { background-color: #1A1F2A; color: white; }
 
-/* --- 1. WIDTH RESTORED TO 1000px --- */
+/* --- 1. WIDE WIDTH (1000px) --- */
 .block-container {
     padding-top: 2rem !important;
     padding-bottom: 2rem !important;
-    max-width: 1000px; /* RESTORED TO 1000px */
+    max-width: 1000px; 
 }
 
 /* Hide Streamlit Elements */
@@ -145,7 +145,6 @@ div[data-testid="stDownloadButton"] > button {
     font-weight: 900 !important; 
     border: none !important; 
     border-radius: 8px !important; 
-    /* AUTO HEIGHT FOR 2 LINES */
     height: auto !important; 
     min-height: 50px !important;
     padding-top: 10px !important;
@@ -177,8 +176,28 @@ input.stTextInput { background-color: #2D3342 !important; color: #FFFFFF !import
 .amber-btn { display: block; background-color: #FFDA47; color: #000000; font-weight: 900; border-radius: 8px; border: none; height: 55px; width: 100%; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; text-align: center; line-height: 55px; text-decoration: none; font-family: 'Inter', sans-serif; margin-bottom: 0px; transition: transform 0.1s ease-in-out; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
 .amber-btn:hover { background-color: white; color: #000000; transform: scale(1.02); }
 
-/* Results Breakdown Styling */
-.breakdown-item { font-family: 'Inter', sans-serif; font-size: 15px; margin-bottom: 8px; color: #E0E0E0; }
+/* --- NEW CARD STYLE FOR BREAKDOWN --- */
+.audit-card {
+    background-color: #2D3342;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #3E4658;
+    height: 100%;
+}
+.audit-card h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    color: #FFFFFF;
+}
+.audit-card p {
+    margin: 5px 0 0 0;
+    font-size: 14px;
+    color: #B0B3B8;
+    line-height: 1.4;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -229,10 +248,8 @@ def save_lead(name, email, url, score, verdict, audit_data):
             response = requests.post(GHL_WEBHOOK_URL, json=payload, timeout=5)
             if response.status_code in [200, 201]:
                 st.success(f"Success! Data sent to {email}.")
-            else:
-                st.error(f"GHL Error: {response.status_code} - {response.text}")
+            # Removed visible error for GHL failure to keep UI clean
         except Exception as e:
-            st.error(f"Connection Error to GHL: {e}")
             print(f"GHL Webhook Failed: {e}")
     else:
         print("GHL Webhook not configured yet.")
@@ -531,20 +548,32 @@ if st.session_state.audit_data:
     """
     st.markdown(html_score_card, unsafe_allow_html=True)
     
-    # 2. BREAKDOWN VISUAL (2 COLUMNS)
-    st.markdown("<h4 style='text-align: center; color: #E0E0E0; margin-bottom: 10px;'>Your Technical Audit Breakdown</h4>", unsafe_allow_html=True)
+    # 2. BREAKDOWN CARDS (2 COLUMNS)
+    st.markdown("<h4 style='text-align: center; color: #E0E0E0; margin-bottom: 20px; margin-top: 20px;'>Your Technical Audit Breakdown</h4>", unsafe_allow_html=True)
     b_col1, b_col2 = st.columns(2)
     items = list(data['breakdown'].items())
-    half = (len(items) + 1) // 2
-    
-    with b_col1:
-        for k, v in items[:half]:
-            icon = "✅" if v['points'] == v['max'] else "❌"
-            st.markdown(f"<div class='breakdown-item'>{icon} <strong>{k}</strong></div>", unsafe_allow_html=True)
-    with b_col2:
-        for k, v in items[half:]:
-            icon = "✅" if v['points'] == v['max'] else "❌"
-            st.markdown(f"<div class='breakdown-item'>{icon} <strong>{k}</strong></div>", unsafe_allow_html=True)
+    # Distribute items evenly
+    for idx, (k, v) in enumerate(items):
+        is_pass = v['points'] == v['max']
+        status_color = "#28A745" if is_pass else "#FF4B4B"
+        icon_text = "PASS" if is_pass else "FAIL"
+        icon_symbol = "✅" if is_pass else "❌"
+        
+        # HTML CARD
+        card_html = f"""
+        <div class="audit-card" style="border-left: 5px solid {status_color};">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h4 style="margin: 0; color: white;">{k}</h4>
+                <span style="background-color: {status_color}; color: white; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-size: 12px;">{icon_text}</span>
+            </div>
+            <p style="margin: 0; font-size: 14px; color: #B0B3B8;">{v['note']}</p>
+        </div>
+        """
+        
+        if idx % 2 == 0:
+            with b_col1: st.markdown(card_html, unsafe_allow_html=True)
+        else:
+            with b_col2: st.markdown(card_html, unsafe_allow_html=True)
             
     if data["status"] == "blocked":
         html_blocked_msg = f"""
@@ -579,12 +608,11 @@ if st.session_state.audit_data:
     if get_pdf:
         if name and email and "@" in email:
             save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
-        if not PDF_AVAILABLE:
-            st.error("Note: PDF Generation is currently disabled. Check requirements.txt")
+            # No error message shown if PDF fails (silent fail per request)
         else:
             st.error("Please enter your name and valid email.")
 
-    # 6. FIX BUTTON #2 (Checklist Removed as requested)
+    # 6. FIX BUTTON #2
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
     st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
 
