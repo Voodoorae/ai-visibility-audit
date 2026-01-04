@@ -56,7 +56,7 @@ st.markdown("""
 .block-container {
     padding-top: 2rem !important;
     padding-bottom: 2rem !important;
-    max-width: 1000px; /* Widened from 700px to allow 4 columns */
+    max-width: 1000px; /* Widened for Dashboard Grid */
 }
 
 /* Hide Streamlit Elements */
@@ -431,8 +431,9 @@ def analyze_website(raw_url):
     except Exception: return fallback_analysis(raw_url)
 
 # --- UI RENDER ---
-col1, col2, col3 = st.columns([1,2,1])
-with col2:
+# Center the Logo and Main Title using columns to keep it tight
+h_col1, h_col2, h_col3 = st.columns([1,2,1])
+with h_col2:
     if os.path.exists("logo.jpg"):
         st.image("logo.jpg", use_container_width=True)
     st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
@@ -450,8 +451,9 @@ if "audit_data" not in st.session_state:
 if "url_input" not in st.session_state:
     st.session_state.url_input = ""
 
-# --- FORM 1: TOP OF PAGE ---
+# --- FORM 1: TOP OF PAGE (Centered nicely) ---
 with st.form(key='audit_form'):
+    # Use columns to control width of input bar if needed, or keep 3:1 ratio
     col1, col2 = st.columns([3, 1])
     with col1:
         # 1. CHANGED PLACEHOLDER TO "mybusiness.com"
@@ -462,11 +464,10 @@ with st.form(key='audit_form'):
 
 # --- 8 SIGNALS SECTION (REORDERED TO 4 COLUMNS x 2 ROWS) ---
 if not st.session_state.audit_data:
-    # UPDATED COPY PER EXPERT
-    # We use the CSS class 'dashboard-head' to add the top border and padding
+    # UPDATED COPY PER EXPERT (NOW INCLUDES CHATGPT)
     st.markdown("""
     <div class="dashboard-head">
-        <h3>Found By AI tests 8 Critical Platforms to help ensure your business can be found by AI services like Siri and Alexa.</h3>
+        <h3>Found By AI tests 8 Critical Platforms to help ensure your business can be found by AI services like Siri, Alexa, and ChatGPT.</h3>
     </div>
     """, unsafe_allow_html=True)
 
@@ -565,86 +566,88 @@ if not st.session_state.audit_data:
 
 # --- RESULTS VIEW (STATE 2) ---
 if st.session_state.audit_data:
-    data = st.session_state.audit_data
-    score_color = data.get("color", "#FFDA47")
-
-    html_score_card = f"""
-    <div class="score-container" style="border-top: 5px solid {score_color};">
-    <div class="score-label">AI VISIBILITY SCORE</div>
-    <div class="score-circle">{data['score']}/100</div>
-    <div class="verdict-text" style="color: {score_color};">{data['verdict']}</div>
-    </div>
-    """
-    st.markdown(html_score_card, unsafe_allow_html=True)
+    # --- CENTERING CONTAINER FOR RESULTS ---
+    # We use a [1, 2, 1] column split to force the content into the middle 50% of the wide 1000px screen.
+    r_col1, r_col2, r_col3 = st.columns([1, 2, 1])
     
-    if data["status"] == "blocked":
-        html_blocked_msg = f"""
-        <div class="blocked-msg">
-        We could verify your domain, but your firewall blocked our content scanner.<br>
-        <strong>If we are blocked, Siri & Alexa likely are too.</strong>
+    with r_col2:
+        data = st.session_state.audit_data
+        score_color = data.get("color", "#FFDA47")
+
+        html_score_card = f"""
+        <div class="score-container" style="border-top: 5px solid {score_color};">
+        <div class="score-label">AI VISIBILITY SCORE</div>
+        <div class="score-circle">{data['score']}/100</div>
+        <div class="verdict-text" style="color: {score_color};">{data['verdict']}</div>
         </div>
         """
-        st.markdown(html_blocked_msg, unsafe_allow_html=True)
-    
-    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-    st.markdown("<p style='color:#FFDA47; font-size:22px; text-align:center; font-weight:700; font-family:Spectral, serif;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
+        st.markdown(html_score_card, unsafe_allow_html=True)
+        
+        if data["status"] == "blocked":
+            html_blocked_msg = f"""
+            <div class="blocked-msg">
+            We could verify your domain, but your firewall blocked our content scanner.<br>
+            <strong>If we are blocked, Siri & Alexa likely are too.</strong>
+            </div>
+            """
+            st.markdown(html_blocked_msg, unsafe_allow_html=True)
+        
+        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#FFDA47; font-size:22px; text-align:center; font-weight:700; font-family:Spectral, serif;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
 
-    with st.form(key='email_form'):
-        c1, c2 = st.columns(2)
-        with c1:
-            name = st.text_input("Name", placeholder="Your Name")
-        with c2:
-            email = st.text_input("Email", placeholder="name@company.com")
-            
-        b1, b2, b3 = st.columns([1, 2, 1])
-        with b2:
+        with st.form(key='email_form'):
+            c1, c2 = st.columns(2)
+            with c1:
+                name = st.text_input("Name", placeholder="Your Name")
+            with c2:
+                email = st.text_input("Email", placeholder="name@company.com")
+                
+            # Submit button spans full width of form
             get_pdf = st.form_submit_button("EMAIL ME MY FOUND SCORE ANALYSIS")
+                
+        if get_pdf:
+            if name and email and "@" in email:
+                save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
+            if not PDF_AVAILABLE:
+                st.error("Note: PDF Generation is currently disabled. Check requirements.txt")
+            else:
+                st.error("Please enter your name and valid email.")
+
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; color: #FFDA47; margin-bottom: 5px;'>UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>", unsafe_allow_html=True)
+        st.markdown("""
+        <p style='text-align: center; color: #fff; margin-bottom: 20px; font-size: 16px; line-height: 1.6;'>
+        You are missing critical AI signals.<br>
+        Get the <strong style='color: #FFDA47;'>Fast Fix Toolkit</strong> to unlock your visibility<br>
+        or get the <strong style='color: #FFDA47;'>Done For You Tune Up</strong> for a fast, hands off full fix.
+        </p>
+        """, unsafe_allow_html=True)
+
+        # Buttons side-by-side inside the centered column
+        b_col1, b_col2 = st.columns(2)
+        with b_col1:
+            st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">FAST FIX TOOLKIT £27</a>""", unsafe_allow_html=True)
+        with b_col2:
+            st.markdown("""<a href="https://go.foundbyai.online/tune-up/page" target="_blank" class="amber-btn">BOOK TUNE UP £150</a>""", unsafe_allow_html=True)
             
-    if get_pdf:
-        if name and email and "@" in email:
-            save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
-            # Success message handling is done in save_lead
-        if not PDF_AVAILABLE:
-            st.error("Note: PDF Generation is currently disabled. Check requirements.txt")
-        else:
-            st.error("Please enter your name and valid email.")
-
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align: center; color: #FFDA47; margin-bottom: 5px;'>UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>", unsafe_allow_html=True)
-    st.markdown("""
-    <p style='text-align: center; color: #fff; margin-bottom: 20px; font-size: 16px; line-height: 1.6;'>
-    You are missing critical AI signals.<br>
-    Get the <strong style='color: #FFDA47;'>Fast Fix Toolkit</strong> to unlock your visibility<br>
-    or get the <strong style='color: #FFDA47;'>Done For You Tune Up</strong> for a fast, hands off full fix.
-    </p>
-    """, unsafe_allow_html=True)
-
-    b_col1, b_col2 = st.columns(2)
-    with b_col1:
-        st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">FAST FIX TOOLKIT £27</a>""", unsafe_allow_html=True)
-    with b_col2:
-        st.markdown("""<a href="https://go.foundbyai.online/tune-up/page" target="_blank" class="amber-btn">BOOK TUNE UP £150</a>""", unsafe_allow_html=True)
+        st.markdown("""
+        <div style='background-color: #2D3342; padding: 20px; border-radius: 8px; margin-top: 30px; margin-bottom: 20px;'>
+        <div style='margin-bottom: 10px;'>✅ <strong>The Unblocker Guide:</strong> Remove AI crawler blockages.</div>
+        <div style='margin-bottom: 10px;'>✅ <strong>Accessibility Tags:</strong> Rank for Voice Search.</div>
+        <div style='margin-bottom: 10px;'>✅ <strong>Schema Generator:</strong> Tell AI exactly what you do.</div>
+        <div style='margin-bottom: 10px;'>✅ <strong>Copyright Script:</strong> Auto-update for Freshness.</div>
+        <div>✅ <strong>Privacy & GDPR:</strong> Build Trust with Agents.</div>
+        </div>
+        """, unsafe_allow_html=True)
         
-    st.markdown("""
-    <div style='background-color: #2D3342; padding: 20px; border-radius: 8px; margin-top: 30px; margin-bottom: 20px;'>
-    <div style='margin-bottom: 10px;'>✅ <strong>The Unblocker Guide:</strong> Remove AI crawler blockages.</div>
-    <div style='margin-bottom: 10px;'>✅ <strong>Accessibility Tags:</strong> Rank for Voice Search.</div>
-    <div style='margin-bottom: 10px;'>✅ <strong>Schema Generator:</strong> Tell AI exactly what you do.</div>
-    <div style='margin-bottom: 10px;'>✅ <strong>Copyright Script:</strong> Auto-update for Freshness.</div>
-    <div>✅ <strong>Privacy & GDPR:</strong> Build Trust with Agents.</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
-    
-    c1, c2, c3 = st.columns([1, 1, 1])
-    
-    def clear_form():
-        st.session_state.audit_data = None
-        st.session_state.url_input = ""
+        st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
         
-    with c2:
-        st.button("🔄 START A NEW AUDIT", on_click=clear_form)
+        # New Audit Button
+        def clear_form():
+            st.session_state.audit_data = None
+            st.session_state.url_input = ""
+            
+        st.button("🔄 START A NEW AUDIT", on_click=clear_form, use_container_width=True)
 
 # --- PROFESSIONAL FOOTER (GLOBAL) ---
 st.markdown("---")
