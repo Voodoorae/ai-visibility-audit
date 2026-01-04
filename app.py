@@ -176,7 +176,7 @@ input.stTextInput { background-color: #2D3342 !important; color: #FFFFFF !import
 .amber-btn { display: block; background-color: #FFDA47; color: #000000; font-weight: 900; border-radius: 8px; border: none; height: 55px; width: 100%; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; text-align: center; line-height: 55px; text-decoration: none; font-family: 'Inter', sans-serif; margin-bottom: 0px; transition: transform 0.1s ease-in-out; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
 .amber-btn:hover { background-color: white; color: #000000; transform: scale(1.02); }
 
-/* --- NEW CARD STYLE FOR BREAKDOWN --- */
+/* --- CARD STYLE FOR BREAKDOWN --- */
 .audit-card {
     background-color: #2D3342;
     border-radius: 8px;
@@ -248,7 +248,6 @@ def save_lead(name, email, url, score, verdict, audit_data):
             response = requests.post(GHL_WEBHOOK_URL, json=payload, timeout=5)
             if response.status_code in [200, 201]:
                 st.success(f"Success! Data sent to {email}.")
-            # Removed visible error for GHL failure to keep UI clean
         except Exception as e:
             print(f"GHL Webhook Failed: {e}")
     else:
@@ -390,7 +389,6 @@ def analyze_website(raw_url):
         score += can_points
 
         # 6. Local Signals (Max: 10) - UPDATED FOR INTERNATIONAL & CONTACT
-        # Matches +1, +44, (0123), etc.
         phone_pattern = r"(\+\d{1,3}\s?)?\(?\d{2,5}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}"
         phone = re.search(phone_pattern, text)
         has_contact = "contact" in text or soup.find('a', href=re.compile(r'contact', re.I))
@@ -548,18 +546,23 @@ if st.session_state.audit_data:
     """
     st.markdown(html_score_card, unsafe_allow_html=True)
     
-    # 2. BREAKDOWN CARDS (2 COLUMNS)
+    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+    
+    # 2. HEADLINE
+    st.markdown("<h3 style='text-align: center; color: #FFDA47; margin-bottom: 5px;'>UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>", unsafe_allow_html=True)
+
+    # 3. FIX BUTTON #1 (SANDWICH TOP)
+    st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
+
+    # 4. BREAKDOWN CARDS (SANDWICH FILLING)
     st.markdown("<h4 style='text-align: center; color: #E0E0E0; margin-bottom: 20px; margin-top: 20px;'>Your Technical Audit Breakdown</h4>", unsafe_allow_html=True)
     b_col1, b_col2 = st.columns(2)
     items = list(data['breakdown'].items())
-    # Distribute items evenly
     for idx, (k, v) in enumerate(items):
         is_pass = v['points'] == v['max']
         status_color = "#28A745" if is_pass else "#FF4B4B"
         icon_text = "PASS" if is_pass else "FAIL"
-        icon_symbol = "✅" if is_pass else "❌"
         
-        # HTML CARD
         card_html = f"""
         <div class="audit-card" style="border-left: 5px solid {status_color};">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -583,18 +586,14 @@ if st.session_state.audit_data:
         </div>
         """
         st.markdown(html_blocked_msg, unsafe_allow_html=True)
-        
-    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-    
-    # 3. HEADLINE
-    st.markdown("<h3 style='text-align: center; color: #FFDA47; margin-bottom: 5px;'>UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>", unsafe_allow_html=True)
 
-    # 4. FIX BUTTON #1
+    # 5. FIX BUTTON #2 (SANDWICH BOTTOM)
+    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
     st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
 
     st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
     
-    # 5. EMAIL FORM
+    # 6. EMAIL FORM (DOWNSELL)
     st.markdown("<p style='color:#8899A6; font-size:16px; text-align:center;'>Or get the detailed breakdown sent to your email:</p>", unsafe_allow_html=True)
     with st.form(key='email_form'):
         c1, c2 = st.columns(2)
@@ -608,17 +607,12 @@ if st.session_state.audit_data:
     if get_pdf:
         if name and email and "@" in email:
             save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
-            # No error message shown if PDF fails (silent fail per request)
         else:
             st.error("Please enter your name and valid email.")
 
-    # 6. FIX BUTTON #2
-    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-    st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
-
     st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
     
-    # 8. COMPETITOR BUTTON
+    # 7. COMPETITOR BUTTON
     def clear_form():
         st.session_state.audit_data = None
         st.session_state.url_input = ""
