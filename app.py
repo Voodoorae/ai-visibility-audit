@@ -52,11 +52,11 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 .stApp { background-color: #1A1F2A; color: white; }
 
-/* --- 1. CLEAN WIDTH (700px) --- */
+/* --- 1. WIDTH RESTORED TO 1000px --- */
 .block-container {
     padding-top: 2rem !important;
     padding-bottom: 2rem !important;
-    max-width: 700px;
+    max-width: 1000px; /* RESTORED TO 1000px */
 }
 
 /* Hide Streamlit Elements */
@@ -145,6 +145,7 @@ div[data-testid="stDownloadButton"] > button {
     font-weight: 900 !important; 
     border: none !important; 
     border-radius: 8px !important; 
+    /* AUTO HEIGHT FOR 2 LINES */
     height: auto !important; 
     min-height: 50px !important;
     padding-top: 10px !important;
@@ -301,13 +302,10 @@ def fallback_analysis(url):
     }
 
 def smart_connect(raw_url):
-    # ROBUST URL CLEANING
     raw_url = raw_url.strip()
-    # Remove protocol if present to get a clean slate
     clean_url = raw_url.replace("https://", "").replace("http://", "").replace("www.", "")
     if clean_url.endswith("/"): clean_url = clean_url[:-1]
     
-    # Try all permutations
     attempts = [f"https://{clean_url}", f"https://www.{clean_url}", f"http://{clean_url}", raw_url]
     headers = {'User-Agent': 'Mozilla/5.0 (compatible; FoundByAI/1.0)', 'Accept': 'text/html'}
     
@@ -499,8 +497,6 @@ if not st.session_state.audit_data:
         else: final_url = url_bottom
         
     if final_url:
-        # RELAXED REGEX: Accepts https://, http://, www., or just words.domain
-        # The smart_connect function handles the cleanup.
         if not re.match(r"^(https?:\/\/)?(www\.)?[\w-]+\.[\w.-]+(\/.*)?$", final_url.strip()):
              st.error("Please enter a valid URL (e.g., example.com or https://example.com) to run the scan.")
         else:
@@ -512,101 +508,95 @@ if not st.session_state.audit_data:
 
 # --- RESULTS VIEW (STATE 2) ---
 if st.session_state.audit_data:
-    data = st.session_state.audit_data
-    score_color = data.get("color", "#FFDA47")
+    # --- CENTER RESULTS ON WIDE SCREEN ---
+    r_col1, r_col2, r_col3 = st.columns([1, 2, 1])
+    
+    with r_col2:
+        data = st.session_state.audit_data
+        score_color = data.get("color", "#FFDA47")
 
-    # 1. SCORE CARD
-    html_score_card = f"""
-    <div class="score-container" style="border-top: 5px solid {score_color};">
-    <div class="score-label">AI VISIBILITY SCORE</div>
-    <div class="score-circle">{data['score']}/100</div>
-    <div class="verdict-text" style="color: {score_color};">{data['verdict']}</div>
-    </div>
-    """
-    st.markdown(html_score_card, unsafe_allow_html=True)
-    
-    # 2. BREAKDOWN VISUAL
-    st.markdown("<h4 style='text-align: center; color: #E0E0E0; margin-bottom: 10px;'>Your Technical Audit Breakdown</h4>", unsafe_allow_html=True)
-    b_col1, b_col2 = st.columns(2)
-    items = list(data['breakdown'].items())
-    half = (len(items) + 1) // 2
-    
-    with b_col1:
-        for k, v in items[:half]:
-            icon = "✅" if v['points'] == v['max'] else "❌"
-            st.markdown(f"<div class='breakdown-item'>{icon} <strong>{k}</strong></div>", unsafe_allow_html=True)
-    with b_col2:
-        for k, v in items[half:]:
-            icon = "✅" if v['points'] == v['max'] else "❌"
-            st.markdown(f"<div class='breakdown-item'>{icon} <strong>{k}</strong></div>", unsafe_allow_html=True)
-            
-    if data["status"] == "blocked":
-        html_blocked_msg = f"""
-        <div class="blocked-msg">
-        We could verify your domain, but your firewall blocked our content scanner.<br>
-        <strong>If we are blocked, Siri & Alexa likely are too.</strong>
+        # 1. SCORE CARD
+        html_score_card = f"""
+        <div class="score-container" style="border-top: 5px solid {score_color};">
+        <div class="score-label">AI VISIBILITY SCORE</div>
+        <div class="score-circle">{data['score']}/100</div>
+        <div class="verdict-text" style="color: {score_color};">{data['verdict']}</div>
         </div>
         """
-        st.markdown(html_blocked_msg, unsafe_allow_html=True)
+        st.markdown(html_score_card, unsafe_allow_html=True)
         
-    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-    
-    # 3. HEADLINE
-    st.markdown("<h3 style='text-align: center; color: #FFDA47; margin-bottom: 5px;'>UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>", unsafe_allow_html=True)
-    st.markdown("""
-    <p style='text-align: center; color: #fff; margin-bottom: 20px; font-size: 16px; line-height: 1.6;'>
-    You are missing critical AI signals.<br>
-    Get the <strong style='color: #FFDA47;'>Fast Fix Toolkit</strong> to unlock your visibility<br>
-    or get the <strong style='color: #FFDA47;'>Done For You Tune Up</strong> for a fast, hands off full fix.
-    </p>
-    """, unsafe_allow_html=True)
-
-    # 4. FIX BUTTON #1
-    st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
-
-    st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
-    
-    # 5. EMAIL FORM
-    st.markdown("<p style='color:#8899A6; font-size:16px; text-align:center;'>Or get the detailed breakdown sent to your email:</p>", unsafe_allow_html=True)
-    with st.form(key='email_form'):
-        c1, c2 = st.columns(2)
-        with c1:
-            name = st.text_input("Name", placeholder="Your Name")
-        with c2:
-            email = st.text_input("Email", placeholder="name@company.com")
+        # 2. BREAKDOWN VISUAL
+        st.markdown("<h4 style='text-align: center; color: #E0E0E0; margin-bottom: 10px;'>Your Technical Audit Breakdown</h4>", unsafe_allow_html=True)
+        b_col1, b_col2 = st.columns(2)
+        items = list(data['breakdown'].items())
+        half = (len(items) + 1) // 2
         
-        get_pdf = st.form_submit_button("EMAIL ME MY FOUND SCORE ANALYSIS", use_container_width=True)
+        with b_col1:
+            for k, v in items[:half]:
+                icon = "✅" if v['points'] == v['max'] else "❌"
+                st.markdown(f"<div class='breakdown-item'>{icon} <strong>{k}</strong></div>", unsafe_allow_html=True)
+        with b_col2:
+            for k, v in items[half:]:
+                icon = "✅" if v['points'] == v['max'] else "❌"
+                st.markdown(f"<div class='breakdown-item'>{icon} <strong>{k}</strong></div>", unsafe_allow_html=True)
+                
+        if data["status"] == "blocked":
+            html_blocked_msg = f"""
+            <div class="blocked-msg">
+            We could verify your domain, but your firewall blocked our content scanner.<br>
+            <strong>If we are blocked, Siri & Alexa likely are too.</strong>
+            </div>
+            """
+            st.markdown(html_blocked_msg, unsafe_allow_html=True)
             
-    if get_pdf:
-        if name and email and "@" in email:
-            save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
-        if not PDF_AVAILABLE:
-            st.error("Note: PDF Generation is currently disabled. Check requirements.txt")
-        else:
-            st.error("Please enter your name and valid email.")
-
-    # 6. CHECKLIST
-    st.markdown("""
-    <div style='background-color: #2D3342; padding: 20px; border-radius: 8px; margin-top: 30px; margin-bottom: 20px;'>
-    <div style='margin-bottom: 10px;'>✅ <strong>The Unblocker Guide:</strong> Remove AI crawler blockages.</div>
-    <div style='margin-bottom: 10px;'>✅ <strong>Accessibility Tags:</strong> Rank for Voice Search.</div>
-    <div style='margin-bottom: 10px;'>✅ <strong>Schema Generator:</strong> Tell AI exactly what you do.</div>
-    <div style='margin-bottom: 10px;'>✅ <strong>Copyright Script:</strong> Auto-update for Freshness.</div>
-    <div>✅ <strong>Privacy & GDPR:</strong> Build Trust with Agents.</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # 7. FIX BUTTON #2
-    st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
-
-    st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
-    
-    # 8. COMPETITOR BUTTON
-    def clear_form():
-        st.session_state.audit_data = None
-        st.session_state.url_input = ""
+        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
         
-    st.button("🔄 CHECK A COMPETITOR'S SCORE", on_click=clear_form, use_container_width=True)
+        # 3. HEADLINE
+        st.markdown("<h3 style='text-align: center; color: #FFDA47; margin-bottom: 5px;'>UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>", unsafe_allow_html=True)
+        st.markdown("""
+        <p style='text-align: center; color: #fff; margin-bottom: 20px; font-size: 16px; line-height: 1.6;'>
+        You are missing critical AI signals.<br>
+        Get the <strong style='color: #FFDA47;'>Fast Fix Toolkit</strong> to unlock your visibility<br>
+        or get the <strong style='color: #FFDA47;'>Done For You Tune Up</strong> for a fast, hands off full fix.
+        </p>
+        """, unsafe_allow_html=True)
+
+        # 4. FIX BUTTON #1
+        st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
+
+        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
+        
+        # 5. EMAIL FORM
+        st.markdown("<p style='color:#8899A6; font-size:16px; text-align:center;'>Or get the detailed breakdown sent to your email:</p>", unsafe_allow_html=True)
+        with st.form(key='email_form'):
+            c1, c2 = st.columns(2)
+            with c1:
+                name = st.text_input("Name", placeholder="Your Name")
+            with c2:
+                email = st.text_input("Email", placeholder="name@company.com")
+            
+            get_pdf = st.form_submit_button("EMAIL ME MY FOUND SCORE ANALYSIS", use_container_width=True)
+                
+        if get_pdf:
+            if name and email and "@" in email:
+                save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
+            if not PDF_AVAILABLE:
+                st.error("Note: PDF Generation is currently disabled. Check requirements.txt")
+            else:
+                st.error("Please enter your name and valid email.")
+
+        # 6. FIX BUTTON #2 (Checklist Removed as requested)
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+        st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
+
+        st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
+        
+        # 8. COMPETITOR BUTTON
+        def clear_form():
+            st.session_state.audit_data = None
+            st.session_state.url_input = ""
+            
+        st.button("🔄 CHECK A COMPETITOR'S SCORE", on_click=clear_form, use_container_width=True)
 
 # --- PROFESSIONAL FOOTER (GLOBAL) ---
 st.markdown("---")
