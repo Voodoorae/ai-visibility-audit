@@ -554,15 +554,22 @@ if not st.session_state.audit_data:
 
     # LOGIC FOR BOTH FORMS
     final_url = None
-    if submit and url:
-        final_url = url
-    elif submit_bottom and url_bottom:
-        final_url = url_bottom
+    if submit:
+        if not url:
+            st.error("Please enter a website URL to scan.")
+        else:
+            final_url = url
+    elif submit_bottom:
+        if not url_bottom:
+            st.error("Please enter a website URL to scan.")
+        else:
+            final_url = url_bottom
         
     if final_url:
         # --- INPUT VALIDATION ---
         if not re.match(r"^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$", final_url):
             st.error("Please enter a valid URL (e.g., example.com or https://example.com) to run the scan.")
+        else:
             st.session_state.url_input = final_url
             with st.spinner("Connecting to AI Scanners..."):
                 time.sleep(1) # Fake tension
