@@ -556,8 +556,6 @@ if not st.session_state.audit_data:
         # --- INPUT VALIDATION ---
         if not re.match(r"^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$", final_url):
             st.error("Please enter a valid URL (e.g., example.com or https://example.com) to run the scan.")
-            st.session_state.url_input = ""
-        else:
             st.session_state.url_input = final_url
             with st.spinner("Connecting to AI Scanners..."):
                 time.sleep(1) # Fake tension
@@ -591,28 +589,7 @@ if st.session_state.audit_data:
             </div>
             """
             st.markdown(html_blocked_msg, unsafe_allow_html=True)
-        
-        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-        st.markdown("<p style='color:#FFDA47; font-size:22px; text-align:center; font-weight:700; font-family:Spectral, serif;'>Unlock the detailed PDF breakdown.</p>", unsafe_allow_html=True)
-
-        with st.form(key='email_form'):
-            c1, c2 = st.columns(2)
-            with c1:
-                name = st.text_input("Name", placeholder="Your Name")
-            with c2:
-                email = st.text_input("Email", placeholder="name@company.com")
-                
-            # Submit button spans full width of form
-            get_pdf = st.form_submit_button("EMAIL ME MY FOUND SCORE ANALYSIS")
-                
-        if get_pdf:
-            if name and email and "@" in email:
-                save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
-            if not PDF_AVAILABLE:
-                st.error("Note: PDF Generation is currently disabled. Check requirements.txt")
-            else:
-                st.error("Please enter your name and valid email.")
-
+            
         st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
         st.markdown("<h3 style='text-align: center; color: #FFDA47; margin-bottom: 5px;'>UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>", unsafe_allow_html=True)
         st.markdown("""
@@ -623,13 +600,31 @@ if st.session_state.audit_data:
         </p>
         """, unsafe_allow_html=True)
 
-        # Buttons side-by-side inside the centered column
-        b_col1, b_col2 = st.columns(2)
-        with b_col1:
-            st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">FAST FIX TOOLKIT £27</a>""", unsafe_allow_html=True)
-        with b_col2:
-            st.markdown("""<a href="https://go.foundbyai.online/tune-up/page" target="_blank" class="amber-btn">BOOK TUNE UP £150</a>""", unsafe_allow_html=True)
+        # --- PRIMARY ACTION: FIX BUTTON (TOP) ---
+        st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
+
+        st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
+        st.markdown("<p style='color:#8899A6; font-size:16px; text-align:center;'>Or get the detailed breakdown sent to your email:</p>", unsafe_allow_html=True)
+
+        # --- SECONDARY ACTION: EMAIL FORM (Side-by-side inputs, wide button below) ---
+        with st.form(key='email_form'):
+            c1, c2 = st.columns(2)
+            with c1:
+                name = st.text_input("Name", placeholder="Your Name")
+            with c2:
+                email = st.text_input("Email", placeholder="name@company.com")
             
+            # Submit button spans full width of form container
+            get_pdf = st.form_submit_button("EMAIL ME MY FOUND SCORE ANALYSIS", use_container_width=True)
+                
+        if get_pdf:
+            if name and email and "@" in email:
+                save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
+            if not PDF_AVAILABLE:
+                st.error("Note: PDF Generation is currently disabled. Check requirements.txt")
+            else:
+                st.error("Please enter your name and valid email.")
+
         st.markdown("""
         <div style='background-color: #2D3342; padding: 20px; border-radius: 8px; margin-top: 30px; margin-bottom: 20px;'>
         <div style='margin-bottom: 10px;'>✅ <strong>The Unblocker Guide:</strong> Remove AI crawler blockages.</div>
@@ -639,15 +634,18 @@ if st.session_state.audit_data:
         <div>✅ <strong>Privacy & GDPR:</strong> Build Trust with Agents.</div>
         </div>
         """, unsafe_allow_html=True)
-        
+
+        # --- REPEAT PRIMARY ACTION: FIX BUTTON (BOTTOM) ---
+        st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
+
         st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
         
-        # New Audit Button
+        # --- TERTIARY ACTION: COMPETITOR CHECK (Renamed & Full Width) ---
         def clear_form():
             st.session_state.audit_data = None
             st.session_state.url_input = ""
             
-        st.button("🔄 START A NEW AUDIT", on_click=clear_form, use_container_width=True)
+        st.button("🔄 CHECK A COMPETITOR'S SCORE", on_click=clear_form, use_container_width=True)
 
 # --- PROFESSIONAL FOOTER (GLOBAL) ---
 st.markdown("---")
