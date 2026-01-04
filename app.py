@@ -90,13 +90,14 @@ h1 {
     line-height: 1.3;
     font-size: 20px; /* Unified Size */
     width: 100%;     /* Force Full Width */
-    max-width: 100%; /* Ensure no restriction */
 }
 
 /* Mobile Tweaks */
 @media (max-width: 600px) {
     .input-header {
-        font-size: 19px !important; /* Slight adjust for small screens to ensure 2 lines */
+        font-size: 18px !important; /* Slightly smaller on mobile to guarantee 2 lines */
+        padding-left: 5px;
+        padding-right: 5px;
     }
     h1 {
         font-size: 2.5rem !important;
@@ -439,14 +440,14 @@ with col2:
     if os.path.exists("logo.jpg"):
         st.image("logo.jpg", use_container_width=True)
     st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
-    
-    # --- MOVED UP: HIGH IMPACT EXPLAINER (UNIFIED STYLE) ---
-    st.markdown("""
-    <div class='input-header'>
-    When customers ask their phones to find a business...<br>
-    <strong>Does your website show up?</strong>
-    </div>
-    """, unsafe_allow_html=True)
+
+# --- MOVED UP: HIGH IMPACT EXPLAINER (UNIFIED STYLE & MOVED OUT OF COLUMN) ---
+st.markdown("""
+<div class='input-header'>
+When customers ask their phones to find a business...<br>
+<strong>Does your website show up?</strong>
+</div>
+""", unsafe_allow_html=True)
 
 if "audit_data" not in st.session_state:
     st.session_state.audit_data = None
