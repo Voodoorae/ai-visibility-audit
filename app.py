@@ -145,7 +145,13 @@ div[data-testid="stDownloadButton"] > button {
     font-weight: 900 !important; 
     border: none !important; 
     border-radius: 8px !important; 
-    height: 50px !important; 
+    /* AUTO HEIGHT FOR 2 LINES */
+    height: auto !important; 
+    min-height: 50px !important;
+    padding-top: 10px !important;
+    padding-bottom: 10px !important;
+    white-space: pre-wrap !important; /* Allows line break */
+    line-height: 1.2 !important;
     font-family: 'Inter', sans-serif !important;
     opacity: 1 !important;
 }
@@ -460,7 +466,8 @@ with st.form(key='audit_form'):
         url = st.text_input("Enter Website URL", placeholder="mybusiness.com", label_visibility="collapsed", key="url_field")
     with col2:
         # --- STRONGER CTA BUTTON ---
-        submit = st.form_submit_button("AM I INVISIBLE? (RUN FREE SCAN)")
+        # Added \n and white-space CSS handles the split
+        submit = st.form_submit_button("AM I INVISIBLE?\n(RUN FREE SCAN)")
 
 # --- 8 SIGNALS SECTION (REORDERED TO 4 COLUMNS x 2 ROWS) ---
 if not st.session_state.audit_data:
@@ -543,7 +550,7 @@ if not st.session_state.audit_data:
         with c1:
             url_bottom = st.text_input("Enter Website URL", placeholder="mybusiness.com", label_visibility="collapsed", key="url_field_bottom")
         with c2:
-            submit_bottom = st.form_submit_button("RUN FREE SCAN")
+            submit_bottom = st.form_submit_button("AM I INVISIBLE?\n(RUN FREE SCAN)")
 
     # LOGIC FOR BOTH FORMS
     final_url = None
