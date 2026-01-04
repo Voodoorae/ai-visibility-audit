@@ -32,14 +32,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- SOCIAL META TAGS ---
-st.markdown("""
-<meta property="og:title" content="Found By AI - Visibility Audit">
-<meta property="og:description" content="Is your business invisible to Siri, Alexa & Google? Check your AI Visibility Score now.">
-<meta property="og:image" content="https://placehold.co/1200x630/1A1F2A/FFDA47?text=Found+By+AI">
-""", unsafe_allow_html=True)
-
-# --- CUSTOM CSS (YOUR ORIGINAL SPECTRAL THEME) ---
+# --- CUSTOM CSS (THE SPECTRAL/AMBER UI) ---
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;800&display=swap');
@@ -164,6 +157,7 @@ input.stTextInput { background-color: #2D3342 !important; color: #FFFFFF !import
 # --- DATABASE HANDLER (GOOGLE SHEETS) ---
 def save_lead(name, email, url, score, verdict, audit_data):
     try:
+        # Check if secrets exist
         if "gcp_service_account" not in st.secrets:
             st.error("Google Sheets Secrets missing in .streamlit/secrets.toml")
             return
@@ -179,6 +173,7 @@ def save_lead(name, email, url, score, verdict, audit_data):
         st.success(f"Report sent to {email}!")
         
     except Exception as e:
+        # Fail silently on UI but print to logs to avoid scaring user
         print(f"Sheet Error: {e}")
         st.warning("Generated report, but could not save to database.")
 
