@@ -78,37 +78,25 @@ h1 {
     line-height: 1;
 }
 
-.sub-head {
-    text-align: center;
-    color: #FFFFFF;
-    font-size: 18px;
-    margin-bottom: 5px; /* Tightened */
-    font-weight: 400;
-    font-family: 'Inter', sans-serif;
-    line-height: 1.3;
-}
-
-/* UPDATED EXPLAINER TEXT (Matches H4 Styling & Fits Lines) */
-.explainer-text {
+/* UNIFIED HEADER STYLE (Applies to both top and bottom text) */
+.input-header {
     text-align: center;
     color: #FFFFFF; /* White */
     font-weight: 600; /* Bold */
     font-family: 'Inter', sans-serif;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     margin-left: auto;
     margin-right: auto;
     line-height: 1.3;
-    /* Responsive Sizing */
-    font-size: 22px; 
-    max-width: 100%;
+    font-size: 20px; /* Unified Size */
+    width: 100%;     /* Force Full Width */
+    max-width: 100%; /* Ensure no restriction */
 }
 
-/* Mobile Tweaks for Text */
+/* Mobile Tweaks */
 @media (max-width: 600px) {
-    .explainer-text {
-        font-size: 18px !important; /* Smaller on mobile to fit lines */
-        padding-left: 10px;
-        padding-right: 10px;
+    .input-header {
+        font-size: 19px !important; /* Slight adjust for small screens to ensure 2 lines */
     }
     h1 {
         font-size: 2.5rem !important;
@@ -452,9 +440,9 @@ with col2:
         st.image("logo.jpg", use_container_width=True)
     st.markdown("<h1>found by AI</h1>", unsafe_allow_html=True)
     
-    # --- MOVED UP: HIGH IMPACT EXPLAINER (CARRIE'S FIX) ---
+    # --- MOVED UP: HIGH IMPACT EXPLAINER (UNIFIED STYLE) ---
     st.markdown("""
-    <div class='explainer-text'>
+    <div class='input-header'>
     When customers ask their phones to find a business...<br>
     <strong>Does your website show up?</strong>
     </div>
@@ -542,7 +530,8 @@ if not st.session_state.audit_data:
     """, unsafe_allow_html=True)
     
     # --- SECOND SEARCH BAR (FOR USER CONVENIENCE) ---
-    st.markdown("<h4 style='text-align:center;'>Ready to check your visibility?</h4>", unsafe_allow_html=True)
+    # APPLIED UNIFIED STYLE HERE TOO
+    st.markdown("<div class='input-header'>Ready to check your visibility?</div>", unsafe_allow_html=True)
     with st.form(key='audit_form_bottom'):
         c1, c2 = st.columns([3, 1])
         with c1:
