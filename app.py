@@ -17,7 +17,6 @@ try:
     from fpdf import FPDF
     PDF_AVAILABLE = True
 except ImportError:
-    # If FPDF is not available, set flag to False
     PDF_AVAILABLE = False
 
 # Disable SSL warnings
@@ -46,12 +45,19 @@ meta_tags = """
 """
 st.markdown(meta_tags, unsafe_allow_html=True)
 
-# --- CUSTOM CSS ---
+# --- CUSTOM CSS (OPTIMIZED FOR CRO & MOBILE) ---
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 .stApp { background-color: #1A1F2A; color: white; }
+
+/* --- 1. REMOVE HUGE TOP PADDING (CRO FIX) --- */
+.block-container {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+    max-width: 700px;
+}
 
 /* Hide Streamlit Elements */
 #MainMenu {visibility: hidden;}
@@ -59,15 +65,15 @@ footer {visibility: hidden;}
 header {visibility: hidden;}
 [data-testid="stHeaderAction"] {display: none !important;}
 
-/* Headers */
+/* Headers - TIGHTENED */
 h1 {
     color: #FFDA47 !important;
     font-family: 'Spectral', serif !important;
     font-weight: 800;
     text-align: center;
-    margin-top: 5px;
+    margin-top: 0px; 
     margin-bottom: 5px;
-    font-size: 3.5rem;
+    font-size: 3rem; 
     letter-spacing: -1px;
     line-height: 1;
 }
@@ -75,55 +81,60 @@ h1 {
 .sub-head {
     text-align: center;
     color: #FFFFFF;
-    font-size: 20px;
-    margin-bottom: 25px;
+    font-size: 18px;
+    margin-bottom: 10px; /* Tightened even more */
     font-weight: 400;
     font-family: 'Inter', sans-serif;
     line-height: 1.4;
 }
 
+/* UPDATED EXPLAINER TEXT (Matches H4 Styling) */
 .explainer-text {
     text-align: center;
-    color: #B0B0B0;
-    font-size: 16px;
-    margin-bottom: 30px;
+    color: #FFFFFF; /* Changed from Grey to White */
+    font-size: 20px; /* Increased Size */
+    font-weight: 600; /* Bolder */
+    margin-bottom: 15px;
     font-family: 'Inter', sans-serif;
-    max-width: 600px;
+    max-width: 800px; /* Widened to allow 2 lines */
     margin-left: auto;
     margin-right: auto;
+    line-height: 1.4;
 }
 
-/* THE CARRIE BOX (Educational, not scary) */
+/* THE CARRIE BOX */
 .did-you-know { 
     text-align: center; 
     color: #E0E0E0; 
     font-size: 16px; 
-    margin-top: 30px; 
-    margin-bottom: 30px; 
+    margin-top: 25px; 
+    margin-bottom: 25px; 
     font-family: 'Inter', sans-serif; 
     font-weight: 500; 
     background: #2D3342; 
-    padding: 20px; 
+    padding: 15px; 
     border-radius: 8px; 
     border: 1px solid #4A5568; 
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
 }
 
-/* CENTERED DASHBOARD HEADER */
+/* CENTERED DASHBOARD HEADER - TIGHTENED */
 .dashboard-head {
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #3E4658; 
 }
 .dashboard-head h3 {
     color: #FFDA47;
     font-family: 'Inter', sans-serif;
-    font-size: 18px; /* Slightly smaller to fit 2 lines if needed */
+    font-size: 18px;
     font-weight: 600;
     margin: 0;
     line-height: 1.4;
 }
 
-/* --- ULTIMATE BUTTON FIX --- */
+/* --- BUTTON STYLES --- */
 div[data-testid="stButton"] > button, 
 div[data-testid="stFormSubmitButton"] > button,
 div[data-testid="stDownloadButton"] > button { 
@@ -145,100 +156,18 @@ div[data-testid="stDownloadButton"] > button:hover {
     box-shadow: 0 0 15px rgba(255, 218, 71, 0.4);
 }
 
-/* --- REMOVE GHOST BUTTONS FROM IMAGES & LINKS --- */
-[data-testid="StyledFullScreenButton"], /* Hides fullscreen icon */
-[data-testid="stImage"] a[target="_blank"] { /* Hides link icon next to image */
-    display: none !important;
-    visibility: hidden !important;
-}
+/* --- INPUT & MISC --- */
+[data-testid="StyledFullScreenButton"], [data-testid="stImage"] a[target="_blank"] { display: none !important; visibility: hidden !important; }
+input.stTextInput { background-color: #2D3342 !important; color: #FFFFFF !important; border: 1px solid #4A5568 !important; }
 
-/* --- INPUT FIELD VISIBILITY --- */
-input.stTextInput { 
-    background-color: #2D3342 !important; 
-    color: #FFFFFF !important; 
-    border: 1px solid #4A5568 !important; 
-}
-
-/* --- LINK BUTTONS --- */
-.amber-btn { 
-    display: block; 
-    background-color: #FFDA47; 
-    color: #000000; 
-    font-weight: 900; 
-    border-radius: 8px; 
-    border: none;
-    height: 55px; 
-    width: 100%; 
-    font-size: 16px; 
-    text-transform: uppercase; 
-    letter-spacing: 1px; 
-    text-align: center; 
-    line-height: 55px; 
-    text-decoration: none; 
-    font-family: 'Inter', sans-serif; 
-    margin-bottom: 0px;
-    transition: transform 0.1s ease-in-out;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-}
-.amber-btn:hover {
-    background-color: white;
-    color: #000000;
-    transform: scale(1.02);
-}
-
-/* Score Card */
-.score-container { 
-    background-color: #252B3B; 
-    border-radius: 15px; 
-    padding: 20px; 
-    text-align: center; 
-    margin-top: 10px; 
-    margin-bottom: 20px; 
-    border: 1px solid #3E4658; 
-}
-.score-circle { 
-    font-size: 36px !important; 
-    font-weight: 800; 
-    line-height: 1; 
-    margin-bottom: 5px; 
-    color: #FFDA47; 
-    font-family: 'Spectral', serif; 
-}
-.score-label { 
-    font-size: 12px; 
-    text-transform: uppercase; 
-    letter-spacing: 2px; 
-    color: #8899A6; 
-    font-family: 'Inter', sans-serif; 
-}
-.verdict-text { 
-    font-size: 20px; 
-    font-weight: 800; 
-    margin-top: 5px; 
-    font-family: 'Spectral', serif; 
-}
-.blocked-msg {
-    color: #FFDA47;
-    font-size: 16px;
-    font-family: 'Inter', sans-serif;
-    line-height: 1.4;
-    margin-top: 10px;
-    padding: 10px;
-    background-color: rgba(255, 218, 71, 0.05);
-    border-radius: 8px;
-    border: 1px solid #FFDA47;
-    text-align: center;
-}
-.signal-item { 
-    background-color: #2D3342; 
-    padding: 10px; 
-    border-radius: 6px; 
-    margin-bottom: 10px; 
-    font-family: 'Inter', sans-serif; 
-    font-size: 14px; 
-    color: #E0E0E0; 
-    border-left: 3px solid #28A745; 
-}
+/* Score Card & Dashboard Elements */
+.score-container { background-color: #252B3B; border-radius: 15px; padding: 20px; text-align: center; margin-top: 10px; margin-bottom: 20px; border: 1px solid #3E4658; }
+.score-circle { font-size: 36px !important; font-weight: 800; line-height: 1; margin-bottom: 5px; color: #FFDA47; font-family: 'Spectral', serif; }
+.score-label { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #8899A6; font-family: 'Inter', sans-serif; }
+.verdict-text { font-size: 20px; font-weight: 800; margin-top: 5px; font-family: 'Spectral', serif; }
+.blocked-msg { color: #FFDA47; font-size: 16px; font-family: 'Inter', sans-serif; line-height: 1.4; margin-top: 10px; padding: 10px; background-color: rgba(255, 218, 71, 0.05); border-radius: 8px; border: 1px solid #FFDA47; text-align: center; }
+.amber-btn { display: block; background-color: #FFDA47; color: #000000; font-weight: 900; border-radius: 8px; border: none; height: 55px; width: 100%; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; text-align: center; line-height: 55px; text-decoration: none; font-family: 'Inter', sans-serif; margin-bottom: 0px; transition: transform 0.1s ease-in-out; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
+.amber-btn:hover { background-color: white; color: #000000; transform: scale(1.02); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -536,7 +465,7 @@ with st.form(key='audit_form'):
 # --- 8 SIGNALS SECTION (REORDERED PER EXPERT) ---
 if not st.session_state.audit_data:
     # UPDATED COPY PER EXPERT
-    st.markdown("---")
+    # We use the CSS class 'dashboard-head' to add the top border and padding
     st.markdown("""
     <div class="dashboard-head">
         <h3>Found By AI tests 8 Critical Platforms to help ensure your business can be found by AI services like Siri and Alexa.</h3>
