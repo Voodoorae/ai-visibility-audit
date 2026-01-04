@@ -52,11 +52,11 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 .stApp { background-color: #1A1F2A; color: white; }
 
-/* --- 1. REMOVE HUGE TOP PADDING (CRO FIX) --- */
+/* --- 1. WIDENED CONTAINER TO USE SIDE SPACE (1000px) --- */
 .block-container {
     padding-top: 2rem !important;
     padding-bottom: 2rem !important;
-    max-width: 700px;
+    max-width: 1000px; /* Widened from 700px to allow 4 columns */
 }
 
 /* Hide Streamlit Elements */
@@ -460,7 +460,7 @@ with st.form(key='audit_form'):
         # --- STRONGER CTA BUTTON ---
         submit = st.form_submit_button("AM I INVISIBLE? (RUN FREE SCAN)")
 
-# --- 8 SIGNALS SECTION (REORDERED PER EXPERT) ---
+# --- 8 SIGNALS SECTION (REORDERED TO 4 COLUMNS x 2 ROWS) ---
 if not st.session_state.audit_data:
     # UPDATED COPY PER EXPERT
     # We use the CSS class 'dashboard-head' to add the top border and padding
@@ -470,49 +470,57 @@ if not st.session_state.audit_data:
     </div>
     """, unsafe_allow_html=True)
 
-    # GRID MOVED UP
-    # Create a Grid Layout (2 columns wide)
-    col1, col2 = st.columns(2)
-
-    # Column 1 Signals
-    with col1:
+    # GRID RESTRUCTURED: 4 Cols x 2 Rows
+    
+    # ROW 1 (The "Big 4")
+    r1c1, r1c2, r1c3, r1c4 = st.columns(4)
+    
+    with r1c1:
         with st.container(border=True):
             st.markdown("### 🗺️ Google Maps")
             st.markdown("Status: **❓ UNKNOWN**")
             st.caption("90% of local traffic starts here. If you aren't on Maps, you don't exist in 'Near Me' searches.")
-        
+            
+    with r1c2:
         with st.container(border=True):
-            st.markdown("### 🍎 Apple Maps (Siri)")
+            st.markdown("### 🍎 Apple Maps")
             st.markdown("Status: **❓ UNKNOWN**")
             st.caption("Siri exclusively uses Apple Maps. Without this, iPhone users literally cannot find you.")
 
+    with r1c3:
         with st.container(border=True):
             st.markdown("### 🗣️ Voice Search")
             st.markdown("Status: **❓ UNKNOWN**")
-            st.caption("Alexa and Google Assistant need specific code to read your answers out loud. Most sites are silent here.")
-            
+            st.caption("Alexa and Google Assistant need specific code to read your answers out loud.")
+    
+    with r1c4:
         with st.container(border=True):
             st.markdown("### 🤖 Bing / ChatGPT")
             st.markdown("Status: **❓ UNKNOWN**")
             st.caption("ChatGPT & Microsoft Copilot use Bing's database. If Bing can't find you, AI can't recommend you.")
 
-    # Column 2 Signals
-    with col2:
+    # ROW 2 (The "Support 4")
+    r2c1, r2c2, r2c3, r2c4 = st.columns(4)
+    
+    with r2c1:
         with st.container(border=True):
             st.markdown("### 🔴 Yelp / Yahoo")
             st.markdown("Status: **❓ UNKNOWN**")
             st.caption("Apple and Bing use Yelp to 'verify' you are a real business. It is a critical trust signal.")
 
+    with r2c2:
         with st.container(border=True):
             st.markdown("### 📍 Facebook Local")
             st.markdown("Status: **❓ UNKNOWN**")
-            st.caption("Meta AI (Instagram/WhatsApp) uses this map data. Essential for social proof and discovery.")
+            st.caption("Meta AI (Instagram/WhatsApp) uses this map data. Essential for social proof.")
 
+    with r2c3:
         with st.container(border=True):
             st.markdown("### 📱 Waze / TomTom")
             st.markdown("Status: **❓ UNKNOWN**")
             st.caption("Powers in-car GPS (Uber, Lyft, Dashboards). Don't let customers drive right past your door.")
 
+    with r2c4:
         with st.container(border=True):
             st.markdown("### 🔍 Schema Markup")
             st.markdown("Status: **❓ UNKNOWN**")
