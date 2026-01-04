@@ -52,11 +52,11 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 .stApp { background-color: #1A1F2A; color: white; }
 
-/* --- 1. WIDE WIDTH (1000px) APPLIES TO ALL PAGES --- */
+/* --- 1. WIDTH RESTORED TO 1000px --- */
 .block-container {
     padding-top: 2rem !important;
     padding-bottom: 2rem !important;
-    max-width: 1000px; 
+    max-width: 1000px; /* RESTORED TO 1000px */
 }
 
 /* Hide Streamlit Elements */
@@ -145,6 +145,7 @@ div[data-testid="stDownloadButton"] > button {
     font-weight: 900 !important; 
     border: none !important; 
     border-radius: 8px !important; 
+    /* AUTO HEIGHT FOR 2 LINES */
     height: auto !important; 
     min-height: 50px !important;
     padding-top: 10px !important;
@@ -371,10 +372,20 @@ def analyze_website(raw_url):
         results["breakdown"]["Canonical Link"] = {"points": can_points, "max": can_max, "note": can_note}
         score += can_points
 
-        # 6. Local Signals (Max: 10)
-        phone = re.search(r"(\+\d{1,2}\s)?\(?\d{3}\)?[\s.-]\d{3}[\s.-]\d{4}", text)
-        loc_score = 10 if phone else 5 
-        results["breakdown"]["Local Signals"] = {"points": loc_score, "max": 10, "note": "Checked for a phone number on the page."}
+        # 6. Local Signals (Max: 10) - UPDATED FOR INTERNATIONAL & CONTACT
+        # Matches +1, +44, (0123), etc.
+        phone_pattern = r"(\+\d{1,3}\s?)?\(?\d{2,5}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}"
+        phone = re.search(phone_pattern, text)
+        has_contact = "contact" in text or soup.find('a', href=re.compile(r'contact', re.I))
+        
+        if phone or has_contact:
+            loc_score = 10
+            note = "✅ Found Phone Number or Contact Page."
+        else:
+            loc_score = 5
+            note = "⚠️ No Phone or Contact link found."
+            
+        results["breakdown"]["Local Signals"] = {"points": loc_score, "max": 10, "note": note}
         score += loc_score
         
         final_score = score + 25 # Add base points
@@ -573,7 +584,7 @@ if st.session_state.audit_data:
         else:
             st.error("Please enter your name and valid email.")
 
-    # 6. FIX BUTTON #2
+    # 6. FIX BUTTON #2 (Checklist Removed as requested)
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
     st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
 
