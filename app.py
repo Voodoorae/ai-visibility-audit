@@ -295,7 +295,7 @@ if PDF_AVAILABLE:
             pdf.ln(10)
         return pdf.output(dest='S').encode('latin-1')
 
-# --- ENGINES (FIXED URL HANDLING) ---
+# --- ENGINES (BULLETPROOF URL HANDLING) ---
 def fallback_analysis(url):
     breakdown = {}
     breakdown["Server Connectivity"] = {"points": 15, "max": 15, "note": "✅ Server responded to a ping."}
@@ -318,30 +318,40 @@ def fallback_analysis(url):
     }
 
 def smart_connect(raw_url):
-    # ROBUST CLEANING: Remove http/s and www only from start
-    clean_url = raw_url.strip()
-    if clean_url.startswith("https://"): clean_url = clean_url[8:]
-    if clean_url.startswith("http://"): clean_url = clean_url[7:]
+    # 1. Clean the input aggressively to get the Naked Domain
+    clean_url = raw_url.strip().lower()
+    clean_url = clean_url.replace("https://", "").replace("http://", "")
     if clean_url.startswith("www."): clean_url = clean_url[4:]
     if clean_url.endswith("/"): clean_url = clean_url[:-1]
     
-    # Try multiple variations with a Real User Agent
-    attempts = [f"https://{clean_url}", f"https://www.{clean_url}", f"http://{clean_url}", raw_url]
+    # 2. Generate ALL variations (www and non-www, secure and non-secure)
+    # Order matters: Try preferred secure protocols first
+    targets = [
+        f"https://www.{clean_url}",
+        f"https://{clean_url}",
+        f"http://www.{clean_url}",
+        f"http://{clean_url}"
+    ]
     
-    # Chrome User Agent to avoid 403 blocks
+    # 3. Use REAL BROWSER Headers
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'en-US,en;q=0.5'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5',
+        'Referer': 'https://www.google.com/'
     }
     
-    for url in attempts:
+    # 4. Try each target until one works
+    for target in targets:
         try:
-            response = requests.get(url, headers=headers, timeout=15, verify=False)
+            # Allow redirects, 10s timeout, verify=False to ignore weak SSL certs on small business sites
+            response = requests.get(target, headers=headers, timeout=10, verify=False)
             if response.status_code == 200:
-                return response, url
-        except: continue
+                return response, target
+        except:
+            continue # Try next variation
     
+    # If all fail, raise error to trigger fallback
     raise ConnectionError("Connect failed")
 
 def check_canonical_status(soup, working_url):
@@ -357,10 +367,8 @@ def analyze_website(raw_url):
     results = {"score": 0, "status": "active", "breakdown": {}, "summary": "", "debug_error": ""}
     try:
         response, working_url = smart_connect(raw_url)
-        # Block only if explicitly 403 Forbidden AND no content (handled by exception mostly)
         if response.status_code in [403, 406, 429, 503]:
-             return fallback_analysis(raw_url)
-             
+            return fallback_analysis(raw_url)
         soup = BeautifulSoup(response.content, 'html.parser')
         text = soup.get_text().lower()
         score = 0
@@ -533,8 +541,7 @@ if not st.session_state.audit_data:
         else: final_url = url_bottom
         
     if final_url:
-        # SUPER RELAXED REGEX - Accepts almost anything that looks like a domain
-        if not re.match(r"^[\w\.-]+\.[\w\.-]+", final_url.strip()):
+        if not re.match(r"^(https?:\/\/)?(www\.)?[\w-]+\.[\w.-]+(\/.*)?$", final_url.strip()):
              st.error("Please enter a valid URL (e.g., example.com or https://example.com) to run the scan.")
         else:
             st.session_state.url_input = final_url
