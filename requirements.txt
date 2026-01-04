@@ -1,8 +1,8 @@
 streamlit
-gspread
-google-auth
 requests
 beautifulsoup4
 pandas
 fpdf
 urllib3
+gspread
+google-auth
