@@ -233,10 +233,6 @@ def save_lead(name, email, url, score, verdict, audit_data):
     else:
         print("GHL Webhook not configured yet.")
 
-# Function used for future CSV utility
-def update_leads(df):
-    df.to_csv(LEADS_FILE, index=False)
-
 # --- PDF GENERATOR (FIXED NAME PERSONALIZATION) ---
 if PDF_AVAILABLE:
     class PDF(FPDF):
@@ -652,50 +648,5 @@ st.markdown("""
     <p>Contact: <a href="mailto:hello@becomefoundbyai.com" style="color: #FFDA47; text-decoration: none;">hello@becomefoundbyai.com</a></p>
 </div>
 """, unsafe_allow_html=True)
-
-# --- ADMIN PANEL ---
-if "admin_unlocked" not in st.session_state:
-    st.session_state.admin_unlocked = False
-
-with st.expander("Admin Panel (Restricted)"):
-    if not st.session_state.admin_unlocked:
-        password = st.text_input("Enter Admin Password", type="password", key="admin_pw_input")
-        if password == "318345":
-            st.session_state.admin_unlocked = True
-            st.rerun()
-    
-    if st.session_state.admin_unlocked:
-        st.success("Access Granted")
-        df = load_leads()
-        edited_df = st.data_editor(df, num_rows="dynamic")
-        
-        if st.button("Update Status"):
-            update_leads(edited_df)
-            st.success("Database Updated")
-            
-        st.download_button(label="Download CSV", data=edited_df.to_csv(index=False).encode('utf-8'), file_name='leads.csv', mime='text/csv')
-        
-        if not df.empty:
-            st.write("### Regenerate Client PDF")
-            selected_row = st.selectbox("Select Lead to Generate PDF", df.index, format_func=lambda x: f"{df.iloc[x]['Name']} - {df.iloc[x]['URL']}")
-            
-            if st.button("Generate & Download PDF"):
-                try:
-                    row = df.iloc[selected_row]
-                    audit_data_raw = row['AuditData']
-                    if isinstance(audit_data_raw, str):
-                        audit_data = json.loads(audit_data_raw)
-                    else:
-                        audit_data = audit_data_raw
-                    
-                    # Pass Name to PDF
-                    pdf_bytes = create_download_pdf(audit_data, row['URL'], row['Name'])
-                    b64 = base64.b64encode(pdf_bytes).decode()
-                    href = f'<a href="data:application/octet-stream;base64,{b64}" download="Report_{row["Name"]}.pdf">Click to Download PDF</a>'
-                    st.markdown(href, unsafe_allow_html=True)
-                except Exception as e:
-                    st.error(f"Error: {e}")
-        else:
-            st.info("No leads captured yet.")
 
 # END OF FILE
