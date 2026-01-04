@@ -82,24 +82,37 @@ h1 {
     text-align: center;
     color: #FFFFFF;
     font-size: 18px;
-    margin-bottom: 10px; /* Tightened even more */
+    margin-bottom: 5px; /* Tightened */
     font-weight: 400;
     font-family: 'Inter', sans-serif;
-    line-height: 1.4;
+    line-height: 1.3;
 }
 
-/* UPDATED EXPLAINER TEXT (Matches H4 Styling) */
+/* UPDATED EXPLAINER TEXT (Matches H4 Styling & Fits Lines) */
 .explainer-text {
     text-align: center;
-    color: #FFFFFF; /* Changed from Grey to White */
-    font-size: 20px; /* Increased Size */
-    font-weight: 600; /* Bolder */
-    margin-bottom: 15px;
+    color: #FFFFFF; /* White */
+    font-weight: 600; /* Bold */
     font-family: 'Inter', sans-serif;
-    max-width: 800px; /* Widened to allow 2 lines */
+    margin-bottom: 15px;
     margin-left: auto;
     margin-right: auto;
-    line-height: 1.4;
+    line-height: 1.3;
+    /* Responsive Sizing */
+    font-size: 22px; 
+    max-width: 100%;
+}
+
+/* Mobile Tweaks for Text */
+@media (max-width: 600px) {
+    .explainer-text {
+        font-size: 18px !important; /* Smaller on mobile to fit lines */
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    h1 {
+        font-size: 2.5rem !important;
+    }
 }
 
 /* THE CARRIE BOX */
