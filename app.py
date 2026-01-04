@@ -39,52 +39,123 @@ st.markdown("""
 <meta property="og:image" content="https://placehold.co/1200x630/1A1F2A/FFDA47?text=Found+By+AI">
 """, unsafe_allow_html=True)
 
-# --- CUSTOM CSS ---
+# --- CUSTOM CSS (YOUR ORIGINAL SPECTRAL THEME) ---
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;800&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 .stApp { background-color: #1A1F2A; color: white; }
-.block-container { padding-top: 2rem !important; padding-bottom: 2rem !important; max-width: 1000px; }
-#MainMenu, footer, header, [data-testid="stHeaderAction"] { visibility: hidden; display: none !important; }
+
+/* 1. WIDE WIDTH */
+.block-container {
+    padding-top: 2rem !important;
+    padding-bottom: 2rem !important;
+    max-width: 1000px; 
+}
+
+/* Hide Streamlit Elements */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+[data-testid="stHeaderAction"] {display: none !important;}
 
 /* HEADERS */
-h1 { color: #FFDA47 !important; font-family: 'Spectral', serif !important; font-weight: 800; text-align: center; margin: 0 0 5px 0; font-size: 3rem; letter-spacing: -1px; line-height: 1; }
-.input-header { text-align: center; color: #FFFFFF; font-weight: 600; font-family: 'Inter', sans-serif; margin-bottom: 12px; font-size: 20px; width: 100%; }
-@media (max-width: 600px) { .input-header { font-size: 18px !important; } h1 { font-size: 2.5rem !important; } }
+h1 {
+    color: #FFDA47 !important;
+    font-family: 'Spectral', serif !important;
+    font-weight: 800;
+    text-align: center;
+    margin-top: 0px; 
+    margin-bottom: 5px;
+    font-size: 3rem; 
+    letter-spacing: -1px;
+    line-height: 1;
+}
 
-/* DID YOU KNOW BOX */
-.did-you-know { text-align: center; color: #E0E0E0; font-size: 16px; margin: 25px 0; font-family: 'Inter', sans-serif; font-weight: 500; background: #2D3342; padding: 15px; border-radius: 8px; border: 1px solid #4A5568; }
+/* UNIFIED HEADER STYLE */
+.input-header {
+    text-align: center;
+    color: #FFFFFF;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 12px;
+    font-size: 20px;
+    width: 100%;
+}
+@media (max-width: 600px) {
+    .input-header { font-size: 18px !important; }
+    h1 { font-size: 2.5rem !important; }
+}
+
+/* THE CARRIE BOX */
+.did-you-know { 
+    text-align: center; 
+    color: #E0E0E0; 
+    font-size: 16px; 
+    margin: 25px 0; 
+    font-family: 'Inter', sans-serif; 
+    font-weight: 500; 
+    background: #2D3342; 
+    padding: 15px; 
+    border-radius: 8px; 
+    border: 1px solid #4A5568; 
+}
 
 /* DASHBOARD HEADER */
-.dashboard-head { text-align: center; margin-bottom: 15px; padding-top: 15px; border-top: 1px solid #3E4658; }
-.dashboard-head h3 { color: #FFDA47; font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 600; margin: 0; }
+.dashboard-head {
+    text-align: center;
+    margin-bottom: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #3E4658; 
+}
+.dashboard-head h3 {
+    color: #FFDA47;
+    font-family: 'Inter', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
 
 /* BUTTONS */
-div[data-testid="stButton"] > button, div[data-testid="stFormSubmitButton"] > button { 
-    background-color: #FFDA47 !important; color: #000000 !important; font-weight: 900 !important; border: none !important; 
-    border-radius: 8px !important; min-height: 50px !important; font-family: 'Inter', sans-serif !important;
+div[data-testid="stButton"] > button, 
+div[data-testid="stFormSubmitButton"] > button { 
+    background-color: #FFDA47 !important; 
+    color: #000000 !important; 
+    font-weight: 900 !important; 
+    border: none !important; 
+    border-radius: 8px !important; 
+    min-height: 50px !important;
+    font-family: 'Inter', sans-serif !important;
 }
-div[data-testid="stButton"] > button:hover, div[data-testid="stFormSubmitButton"] > button:hover {
-    background-color: #FFFFFF !important; transform: scale(1.02);
+div[data-testid="stButton"] > button:hover, 
+div[data-testid="stFormSubmitButton"] > button:hover {
+    background-color: #FFFFFF !important;
+    transform: scale(1.02);
 }
 
 /* INPUTS */
 input.stTextInput { background-color: #2D3342 !important; color: #FFFFFF !important; border: 1px solid #4A5568 !important; }
 
 /* RESULTS CARD */
-.score-container { background-color: #252B3B; border-radius: 15px; padding: 20px; text-align: center; margin: 10px 0 20px 0; border: 1px solid #3E4658; }
+.score-container { background-color: #252B3B; border-radius: 15px; padding: 20px; text-align: center; margin-top: 10px; margin-bottom: 20px; border: 1px solid #3E4658; }
 .score-circle { font-size: 36px !important; font-weight: 800; color: #FFDA47; font-family: 'Spectral', serif; }
 .score-label { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #8899A6; font-family: 'Inter', sans-serif; }
 .verdict-text { font-size: 20px; font-weight: 800; margin-top: 5px; font-family: 'Spectral', serif; }
 .blocked-msg { color: #FFDA47; background-color: rgba(255, 218, 71, 0.05); border: 1px solid #FFDA47; padding: 10px; border-radius: 8px; text-align: center; margin-top: 10px; }
 
 /* AMBER BUTTON LINK */
-.amber-btn { display: block; background-color: #FFDA47; color: #000000; font-weight: 900; border-radius: 8px; height: 55px; width: 100%; font-size: 16px; text-align: center; line-height: 55px; text-decoration: none; font-family: 'Inter', sans-serif; transition: transform 0.1s; }
+.amber-btn { display: block; background-color: #FFDA47; color: #000000; font-weight: 900; border-radius: 8px; border: none; height: 55px; width: 100%; font-size: 16px; text-align: center; line-height: 55px; text-decoration: none; font-family: 'Inter', sans-serif; transition: transform 0.1s; }
 .amber-btn:hover { background-color: white; color: #000000; transform: scale(1.02); }
 
 /* BREAKDOWN CARDS */
-.audit-card { background-color: #2D3342; border-radius: 8px; padding: 15px; margin-bottom: 15px; border: 1px solid #3E4658; height: 100%; }
+.audit-card {
+    background-color: #2D3342;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #3E4658;
+    height: 100%;
+}
 .audit-card h4 { margin: 0; font-size: 16px; font-weight: 700; font-family: 'Inter', sans-serif; color: #FFFFFF; }
 .audit-card p { margin: 5px 0 0 0; font-size: 14px; color: #B0B3B8; }
 </style>
@@ -93,16 +164,15 @@ input.stTextInput { background-color: #2D3342 !important; color: #FFFFFF !import
 # --- DATABASE HANDLER (GOOGLE SHEETS) ---
 def save_lead(name, email, url, score, verdict, audit_data):
     try:
-        # Check for secrets
         if "gcp_service_account" not in st.secrets:
-            st.error("Missing Google Sheets Secrets in .streamlit/secrets.toml")
+            st.error("Google Sheets Secrets missing in .streamlit/secrets.toml")
             return
             
         scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
         client = gspread.authorize(credentials)
         
-        # Ensure sheet name matches EXACTLY
+        # Ensure sheet name is exactly "Found By AI Leads"
         sheet = client.open("Found By AI Leads").sheet1
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         sheet.append_row([name, email, url, score, verdict, timestamp])
