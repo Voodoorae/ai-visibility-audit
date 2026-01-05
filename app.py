@@ -342,34 +342,36 @@ def analyze_website(raw_url):
         text = soup.get_text().lower()
         score = 0
         
-        # 1. Schema Code (Max: 30)
+        # --- SCORING WEIGHTS ADJUSTED TO SUM TO 75 (PLUS 25 HARDCODED = 100) ---
+
+        # 1. Schema Code (Max: 20)
         schemas = soup.find_all('script', type='application/ld+json')
-        schema_score = 30 if len(schemas) > 0 else 0
-        results["breakdown"]["Schema Code"] = {"points": schema_score, "max": 30, "note": "Checked JSON-LD for Identity Chip."}
+        schema_score = 20 if len(schemas) > 0 else 0
+        results["breakdown"]["Schema Code"] = {"points": schema_score, "max": 20, "note": "Checked JSON-LD for Identity Chip."}
         score += schema_score
 
-        # 2. Voice Search (Max: 20)
+        # 2. Voice Search (Max: 15)
         headers_h = soup.find_all(['h1', 'h2', 'h3'])
         q_words = ['how', 'cost', 'price', 'where', 'faq', 'what is']
         has_questions = any(any(q in h.get_text().lower() for q in q_words) for h in headers_h)
-        voice_score = 20 if has_questions else 0
-        results["breakdown"]["Voice Search"] = {"points": voice_score, "max": 20, "note": "Checked Headers for Q&A format."}
+        voice_score = 15 if has_questions else 0
+        results["breakdown"]["Voice Search"] = {"points": voice_score, "max": 15, "note": "Checked Headers for Q&A format."}
         score += voice_score
 
-        # 3. Accessibility (Max: 15)
+        # 3. Accessibility (Max: 10)
         images = soup.find_all('img')
         imgs_with_alt = sum(1 for img in images if img.get('alt'))
         total_imgs = len(images)
-        acc_score = 15 if total_imgs == 0 or (total_imgs > 0 and (imgs_with_alt / total_imgs) > 0.8) else 0
-        results["breakdown"]["Accessibility"] = {"points": acc_score, "max": 15, "note": "Checked Alt Tags (80% minimum)." }
+        acc_score = 10 if total_imgs == 0 or (total_imgs > 0 and (imgs_with_alt / total_imgs) > 0.8) else 0
+        results["breakdown"]["Accessibility"] = {"points": acc_score, "max": 10, "note": "Checked Alt Tags (80% minimum)." }
         score += acc_score
         
-        # 4. Freshness (Max: 15)
+        # 4. Freshness (Max: 10)
         current_year = str(datetime.datetime.now().year)
         has_current_year = current_year in text
         has_script = '<script>document.write(new Date().getfullyear());</script>' in str(response.content).lower().replace(' ', '')
-        fresh_score = 15 if has_current_year or has_script else 0
-        results["breakdown"]["Freshness"] = {"points": fresh_score, "max": 15, "note": "Checked for current Copyright year or dynamic script."}
+        fresh_score = 10 if has_current_year or has_script else 0
+        results["breakdown"]["Freshness"] = {"points": fresh_score, "max": 10, "note": "Checked for current Copyright year or dynamic script."}
         score += fresh_score
         
         # 5. Canonical Link (Max: 10)
@@ -392,6 +394,7 @@ def analyze_website(raw_url):
         results["breakdown"]["Local Signals"] = {"points": loc_score, "max": 10, "note": note}
         score += loc_score
         
+        # Add the 25 "Given" points for connectivity/SSL to reach 100
         final_score = score + 25 
         
         if final_score < 60:
@@ -516,11 +519,15 @@ if not st.session_state.audit_data:
              st.error("Please enter a valid URL (e.g., example.com or https://example.com) to run the scan.")
         else:
             st.session_state.url_input = final_url
+            
+            # --- NEW: TOAST NOTIFICATION ---
+            st.toast("Connecting to Neural Network...", icon="🧠")
+            
             with st.spinner("Connecting to AI Scanners..."):
                 time.sleep(1)
                 st.session_state.audit_data = analyze_website(final_url)
                 
-                # --- NEW: AUTO-SAVE URL SCAN TO GOOGLE SHEETS (SILENTLY) ---
+                # --- AUTO-SAVE URL SCAN TO GOOGLE SHEETS (SILENTLY) ---
                 save_lead(
                     name="Visitor", 
                     email="N/A", 
