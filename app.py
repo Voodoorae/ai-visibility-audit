@@ -200,22 +200,28 @@ input.stTextInput { background-color: #2D3342 !important; color: #FFFFFF !import
 """, unsafe_allow_html=True)
 
 # --- DATABASE / GOOGLE SHEETS HANDLER (REPLACES WEBHOOK) ---
+# --- DATABASE / GOOGLE SHEETS HANDLER (DEBUG MODE) ---
 def save_lead(name, email, url, score, verdict, audit_data):
     try:
         if "gcp_service_account" not in st.secrets:
-            # We don't crash, we just warn if secrets are missing
-            st.warning("Data connection missing. Please check secrets.")
+            st.error("CRITICAL: Secrets are missing!")
             return
 
         scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
         client = gspread.authorize(credentials)
         
-        # Ensure sheet name is exactly "Found By AI Leads"
+        # DEBUG: Let's see if we can find the sheet
+        st.info("Attempting to connect to 'Found By AI Leads'...")
+        
         sheet = client.open("Found By AI Leads").sheet1
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         sheet.append_row([name, email, url, score, verdict, timestamp])
         st.success(f"Report sent to {email}!")
+        
+    except Exception as e:
+        # SHOW ME THE ERROR
+        st.error(f"DETAILED ERROR: {str(e)}")
         
     except Exception as e:
         print(f"Sheet Error: {e}")
