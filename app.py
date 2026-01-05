@@ -5,10 +5,6 @@ import re
 import time
 import datetime
 import urllib3
-import random
-import hashlib
-import base64
-import json
 import os
 import gspread
 from google.oauth2.service_account import Credentials
@@ -199,33 +195,40 @@ input.stTextInput { background-color: #2D3342 !important; color: #FFFFFF !import
 </style>
 """, unsafe_allow_html=True)
 
-# --- DATABASE / GOOGLE SHEETS HANDLER (REPLACES WEBHOOK) ---
-# --- DATABASE / GOOGLE SHEETS HANDLER (DEBUG MODE) ---
-def save_lead(name, email, url, score, verdict, audit_data):
+# --- DATABASE / GOOGLE SHEETS HANDLER (UPDATED FOR DUAL CAPTURE) ---
+def save_lead(name, email, url, score, verdict, audit_data, silent=False):
+    """
+    Saves lead data to Google Sheets.
+    silent=True: Used for initial scan (doesn't show success popup).
+    silent=False: Used for email form (shows success popup).
+    """
     try:
         if "gcp_service_account" not in st.secrets:
-            st.error("CRITICAL: Secrets are missing!")
+            # We don't crash, we just warn if secrets are missing
+            if not silent: st.warning("Data connection missing. Please check secrets.")
             return
 
         scope = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         credentials = Credentials.from_service_account_info(st.secrets["gcp_service_account"], scopes=scope)
         client = gspread.authorize(credentials)
         
-        # DEBUG: Let's see if we can find the sheet
-        st.info("Attempting to connect to 'Found By AI Leads'...")
-        
+        # Ensure sheet name is exactly "Found By AI Leads"
         sheet = client.open("Found By AI Leads").sheet1
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        sheet.append_row([name, email, url, score, verdict, timestamp])
-        st.success(f"Report sent to {email}!")
         
-    except Exception as e:
-        # SHOW ME THE ERROR
-        st.error(f"DETAILED ERROR: {str(e)}")
+        # Clean up data if missing
+        final_name = name if name else "Visitor"
+        final_email = email if email else "N/A"
+        
+        sheet.append_row([final_name, final_email, url, score, verdict, timestamp])
+        
+        if not silent:
+            st.success(f"Report sent to {final_email}!")
         
     except Exception as e:
         print(f"Sheet Error: {e}")
-        st.warning("We generated your report, but couldn't save to the database.")
+        if not silent:
+            st.warning("We generated your report, but couldn't save to the database.")
 
 # --- PDF GENERATOR ---
 if PDF_AVAILABLE:
@@ -339,10 +342,10 @@ def analyze_website(raw_url):
         text = soup.get_text().lower()
         score = 0
         
-        # 1. Schema Code (Max INCREASED to 40 to balance score)
+        # 1. Schema Code (Max: 30)
         schemas = soup.find_all('script', type='application/ld+json')
-        schema_score = 40 if len(schemas) > 0 else 0
-        results["breakdown"]["Schema Code"] = {"points": schema_score, "max": 40, "note": "Checked JSON-LD for Identity Chip."}
+        schema_score = 30 if len(schemas) > 0 else 0
+        results["breakdown"]["Schema Code"] = {"points": schema_score, "max": 30, "note": "Checked JSON-LD for Identity Chip."}
         score += schema_score
 
         # 2. Voice Search (Max: 20)
@@ -353,12 +356,12 @@ def analyze_website(raw_url):
         results["breakdown"]["Voice Search"] = {"points": voice_score, "max": 20, "note": "Checked Headers for Q&A format."}
         score += voice_score
 
-        # 3. Accessibility (Max REDUCED to 5 so failure penalty is small)
+        # 3. Accessibility (Max: 15)
         images = soup.find_all('img')
         imgs_with_alt = sum(1 for img in images if img.get('alt'))
         total_imgs = len(images)
-        acc_score = 5 if total_imgs == 0 or (total_imgs > 0 and (imgs_with_alt / total_imgs) > 0.8) else 0
-        results["breakdown"]["Accessibility"] = {"points": acc_score, "max": 5, "note": "Checked Alt Tags (80% minimum)." }
+        acc_score = 15 if total_imgs == 0 or (total_imgs > 0 and (imgs_with_alt / total_imgs) > 0.8) else 0
+        results["breakdown"]["Accessibility"] = {"points": acc_score, "max": 15, "note": "Checked Alt Tags (80% minimum)." }
         score += acc_score
         
         # 4. Freshness (Max: 15)
@@ -389,8 +392,7 @@ def analyze_website(raw_url):
         results["breakdown"]["Local Signals"] = {"points": loc_score, "max": 10, "note": note}
         score += loc_score
         
-        # Final Score Calculation (No padding)
-        final_score = score
+        final_score = score + 25 
         
         if final_score < 60:
             results["verdict"], results["color"], results["summary"] = "INVISIBLE TO AI", "#FF4B4B", "Your site is failing core visibility checks. You are almost certainly being overlooked by modern AI search agents."
@@ -517,6 +519,18 @@ if not st.session_state.audit_data:
             with st.spinner("Connecting to AI Scanners..."):
                 time.sleep(1)
                 st.session_state.audit_data = analyze_website(final_url)
+                
+                # --- NEW: AUTO-SAVE URL SCAN TO GOOGLE SHEETS (SILENTLY) ---
+                save_lead(
+                    name="Visitor", 
+                    email="N/A", 
+                    url=final_url, 
+                    score=st.session_state.audit_data['score'], 
+                    verdict=st.session_state.audit_data['verdict'], 
+                    audit_data=st.session_state.audit_data,
+                    silent=True # Don't show success popup
+                )
+                
                 st.rerun()
 
 # --- RESULTS VIEW (STATE 2) ---
@@ -594,7 +608,16 @@ if st.session_state.audit_data:
             
     if get_pdf:
         if name and email and "@" in email:
-            save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'], data)
+            # --- SAVE FULL LEAD (WITH POPUP) ---
+            save_lead(
+                name=name, 
+                email=email, 
+                url=st.session_state.url_input, 
+                score=data['score'], 
+                verdict=data['verdict'], 
+                audit_data=data,
+                silent=False # Show success popup
+            )
         else:
             st.error("Please enter your name and valid email.")
 
