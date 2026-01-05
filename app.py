@@ -333,10 +333,10 @@ def analyze_website(raw_url):
         text = soup.get_text().lower()
         score = 0
         
-        # 1. Schema Code (Max: 30)
+        # 1. Schema Code (Max INCREASED to 40 to balance score)
         schemas = soup.find_all('script', type='application/ld+json')
-        schema_score = 30 if len(schemas) > 0 else 0
-        results["breakdown"]["Schema Code"] = {"points": schema_score, "max": 30, "note": "Checked JSON-LD for Identity Chip."}
+        schema_score = 40 if len(schemas) > 0 else 0
+        results["breakdown"]["Schema Code"] = {"points": schema_score, "max": 40, "note": "Checked JSON-LD for Identity Chip."}
         score += schema_score
 
         # 2. Voice Search (Max: 20)
@@ -347,12 +347,12 @@ def analyze_website(raw_url):
         results["breakdown"]["Voice Search"] = {"points": voice_score, "max": 20, "note": "Checked Headers for Q&A format."}
         score += voice_score
 
-        # 3. Accessibility (Max: 15)
+        # 3. Accessibility (Max REDUCED to 5 so failure penalty is small)
         images = soup.find_all('img')
         imgs_with_alt = sum(1 for img in images if img.get('alt'))
         total_imgs = len(images)
-        acc_score = 15 if total_imgs == 0 or (total_imgs > 0 and (imgs_with_alt / total_imgs) > 0.8) else 0
-        results["breakdown"]["Accessibility"] = {"points": acc_score, "max": 15, "note": "Checked Alt Tags (80% minimum)." }
+        acc_score = 5 if total_imgs == 0 or (total_imgs > 0 and (imgs_with_alt / total_imgs) > 0.8) else 0
+        results["breakdown"]["Accessibility"] = {"points": acc_score, "max": 5, "note": "Checked Alt Tags (80% minimum)." }
         score += acc_score
         
         # 4. Freshness (Max: 15)
@@ -383,7 +383,8 @@ def analyze_website(raw_url):
         results["breakdown"]["Local Signals"] = {"points": loc_score, "max": 10, "note": note}
         score += loc_score
         
-        final_score = score + 25 
+        # Final Score Calculation (No padding)
+        final_score = score
         
         if final_score < 60:
             results["verdict"], results["color"], results["summary"] = "INVISIBLE TO AI", "#FF4B4B", "Your site is failing core visibility checks. You are almost certainly being overlooked by modern AI search agents."
@@ -610,5 +611,3 @@ st.markdown("""
     <p>Contact: <a href="mailto:hello@becomefoundbyai.com" style="color: #FFDA47; text-decoration: none;">hello@becomefoundbyai.com</a></p>
 </div>
 """, unsafe_allow_html=True)
-
-# END OF FILE
