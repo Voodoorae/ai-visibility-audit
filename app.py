@@ -520,8 +520,8 @@ if not st.session_state.audit_data:
         else:
             st.session_state.url_input = final_url
             
-            # --- NEW: TOAST NOTIFICATION ---
-            st.toast("Connecting to Neural Network...", icon="🧠")
+            # --- NEW: TOAST NOTIFICATION (UPDATED MESSAGE) ---
+            st.toast("Checking Visibility...", icon="👁️")
             
             with st.spinner("Connecting to AI Scanners..."):
                 time.sleep(1)
