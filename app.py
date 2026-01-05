@@ -8,7 +8,6 @@ import urllib3
 import random
 import hashlib
 import base64
-import pandas as pd
 import json
 import os
 import gspread
