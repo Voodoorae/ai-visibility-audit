@@ -561,7 +561,7 @@ if st.session_state.audit_data:
     st.markdown("<h3 style='text-align: center; color: #FFDA47; margin-bottom: 5px;'>UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>", unsafe_allow_html=True)
 
     # 3. FIX BUTTON #1 (SANDWICH TOP)
-    st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
+    st.markdown("""<a href="https://go.becomefoundbyai.com/audit-results" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
 
     # 4. BREAKDOWN CARDS (SANDWICH FILLING)
     st.markdown("<h4 style='text-align: center; color: #E0E0E0; margin-bottom: 20px; margin-top: 30px;'>Your Technical Audit Breakdown</h4>", unsafe_allow_html=True)
@@ -598,7 +598,7 @@ if st.session_state.audit_data:
 
     # 5. FIX BUTTON #2 (SANDWICH BOTTOM)
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-    st.markdown("""<a href="https://go.foundbyai.online/get-toolkit" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
+    st.markdown("""<a href="https://go.becomefoundbyai.com/audit-results" target="_blank" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>""", unsafe_allow_html=True)
 
     st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
     
