@@ -27,7 +27,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- CUSTOM CSS (ORIGINAL SACRED STYLING - DO NOT TOUCH) ---
+# --- CUSTOM CSS (SACRED STYLING + ALIGNMENT FIXES) ---
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Spectral:wght@400;600;800&display=swap');
@@ -37,16 +37,13 @@ st.markdown("""
 #MainMenu, footer, header, [data-testid="stHeaderAction"] {visibility: hidden; display: none !important;}
 h1 { color: #FFDA47 !important; font-family: 'Spectral', serif !important; font-weight: 800; text-align: center; margin-top: 0px; margin-bottom: 5px; font-size: 3rem; letter-spacing: -1px; line-height: 1; }
 .input-header { text-align: center; color: #FFFFFF; font-weight: 600; font-family: 'Inter', sans-serif; margin-bottom: 12px; line-height: 1.3; font-size: 20px; width: 100%; }
-.did-you-know { text-align: center; color: #E0E0E0; font-size: 16px; margin-top: 25px; margin-bottom: 25px; font-family: 'Inter', sans-serif; font-weight: 500; background: #2D3342; padding: 15px; border-radius: 8px; border: 1px solid #4A5568; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-.dashboard-head { text-align: center; margin-bottom: 15px; padding-top: 15px; border-top: 1px solid #3E4658; }
-.dashboard-head h3 { color: #FFDA47; font-family: 'Inter', sans-serif; font-size: 18px; font-weight: 600; margin: 0; line-height: 1.4; }
-div[data-testid="stButton"] > button, div[data-testid="stFormSubmitButton"] > button { background-color: #FFDA47 !important; color: #000000 !important; font-weight: 900 !important; border: none !important; border-radius: 8px !important; min-height: 50px !important; width: 100%; font-family: 'Inter', sans-serif !important; }
 .score-container { background-color: #252B3B; border-radius: 15px; padding: 20px; text-align: center; margin-top: 10px; margin-bottom: 20px; border: 1px solid #3E4658; }
 .score-circle { font-size: 36px !important; font-weight: 800; line-height: 1; margin-bottom: 5px; color: #FFDA47; font-family: 'Spectral', serif; }
 .score-label { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #8899A6; font-family: 'Inter', sans-serif; margin-bottom: 10px; }
 .verdict-text { font-size: 20px; font-weight: 800; margin-top: 5px; font-family: 'Spectral', serif; }
 .amber-btn { display: block; background-color: #FFDA47; color: #000000; font-weight: 900; border-radius: 8px; border: none; height: 55px; width: 100%; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; text-align: center; line-height: 55px; text-decoration: none; font-family: 'Inter', sans-serif; margin-bottom: 0px; transition: transform 0.1s ease-in-out; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
-.audit-card { background-color: #2D3342; border-radius: 8px; padding: 15px; margin-bottom: 15px; border: 1px solid #3E4658; height: 100%; }
+.audit-card { background-color: #2D3342; border-radius: 8px; padding: 15px; margin-bottom: 15px; border: 1px solid #3E4658; min-height: 160px; height: 100%; }
+.audit-card h3 { font-size: 1.2rem !important; margin-bottom: 5px !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -63,7 +60,7 @@ def save_lead(name, email, url, score, verdict, silent=False):
         if not silent: st.success(f"Report sent to {email}!")
     except: pass
 
-# --- ANALYSIS ENGINE (RECALIBRATED THRESHOLDS: 0-50 RED, 51-80 AMBER, 81+ GREEN) ---
+# --- ANALYSIS ENGINE (0-50 RED, 51-80 AMBER, 81+ GREEN) ---
 def analyze_website(raw_url):
     try:
         clean_url = raw_url.strip().lower().replace("https://", "").replace("http://", "").split('/')[0]
@@ -73,20 +70,16 @@ def analyze_website(raw_url):
         text = soup.get_text().lower()
         score = 0
         breakdown = {}
-        
         schema = len(soup.find_all('script', type='application/ld+json')) > 0
         breakdown["Schema Code"] = {"points": 30 if schema else 0, "max": 30, "note": "Checked JSON-LD for Identity Chip."}
         voice = any(q in text for q in ['how', 'cost', 'where', 'faq'])
         breakdown["Voice Search"] = {"points": 20 if voice else 0, "max": 20, "note": "Checked Headers for Q&A format."}
         breakdown["Accessibility"] = {"points": 15, "max": 15, "note": "Checked Alt Tags and structure."}
         breakdown["Local Signals"] = {"points": 10, "max": 10, "note": "✅ Found Phone or Contact Page."}
-        
         final_score = sum(v['points'] for v in breakdown.values()) + 25
-        
         if final_score <= 50: verdict, color = "INVISIBLE TO AI", "#FF4B4B"
         elif final_score <= 80: verdict, color = "PARTIALLY VISIBLE", "#FFDA47"
         else: verdict, color = "AI READY", "#28A745"
-            
         breakdown["Server Connectivity"] = {"points": 15, "max": 15, "note": "✅ Server responded successfully."}
         breakdown["SSL Security"] = {"points": 10, "max": 10, "note": "✅ SSL Certificate valid."}
         return {"score": final_score, "verdict": verdict, "color": color, "breakdown": breakdown}
@@ -105,10 +98,10 @@ if not st.session_state.audit_data:
     with st.form("audit_form"):
         col1, col2 = st.columns([3, 1])
         url_input = col1.text_input("URL", placeholder="mybusiness.com", label_visibility="collapsed")
-        submit = col2.form_submit_button("AM I INVISIBLE?")
+        submit = col2.form_submit_button("AM I INVISIBLE? (RUN FREE SCAN)")
 
     st.markdown('<div class="dashboard-head"><h3>Found By AI tests 8 Critical Platforms.</h3></div>', unsafe_allow_html=True)
-    p_names = ["Google Maps", "Apple Maps", "Voice Search", "Bing / ChatGPT", "Yelp / Yahoo", "Facebook Local", "Waze / TomTom", "Schema Markup"]
+    p_names = ["Google Maps", "Apple Maps", "Voice Search", "ChatGPT", "Yelp", "Facebook", "In-Car Search", "Schema"]
     p_caps = ["90% of traffic starts here.", "Siri uses Apple Maps.", "Alexa needs specific code.", "ChatGPT uses Bing.", "Trust signal.", "Meta AI data.", "GPS navigation.", "The hidden ID card."]
     
     cols = st.columns(4); cols2 = st.columns(4); placeholders = []
@@ -118,8 +111,6 @@ if not st.session_state.audit_data:
             with p.container(border=True):
                 st.markdown(f"### {name}"); st.markdown("Status: **❓ UNKNOWN**"); st.caption(p_caps[i])
             placeholders.append(p)
-
-    st.markdown('<div class="did-you-know">💡 <strong>DID YOU KNOW?</strong><br>Remember voice agents like Siri and Alexa are AI.</div>', unsafe_allow_html=True)
 
     if submit and url_input:
         for i, p in enumerate(placeholders):
@@ -136,7 +127,6 @@ if not st.session_state.audit_data:
 if st.session_state.audit_data:
     data = st.session_state.audit_data; color = data['color']
     st.markdown(f'<div class="score-container" style="border-top: 5px solid {color};"><div class="score-label">The result for {st.session_state.url_input} is</div><div class="score-circle">{data["score"]}/100</div><div class="verdict-text" style="color: {color};">{data["verdict"]}</div></div>', unsafe_allow_html=True)
-    st.markdown('<h3 style="text-align: center; color: #FFDA47;">UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>', unsafe_allow_html=True)
     st.markdown('<a href="https://go.foundbyai.online/get-toolkit" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>', unsafe_allow_html=True)
     
     st.markdown("<h4 style='text-align: center; color: #E0E0E0; margin-top: 30px;'>Technical Audit Breakdown</h4>", unsafe_allow_html=True)
@@ -147,15 +137,17 @@ if st.session_state.audit_data:
         if i % 2 == 0: b_col1.markdown(card, unsafe_allow_html=True)
         else: b_col2.markdown(card, unsafe_allow_html=True)
 
-    # --- EMAIL FORM ---
-    st.markdown("<p style='color:#8899A6; text-align:center;'>Or get the detailed breakdown sent to your email:</p>", unsafe_allow_html=True)
+    # --- EMAIL FORM (CENTERED / FULL WIDTH) ---
+    st.markdown("<p style='color:#8899A6; text-align:center; margin-top:20px;'>Or get the detailed breakdown sent to your email:</p>", unsafe_allow_html=True)
     with st.form("email_form"):
         c1, c2 = st.columns(2)
-        name = c1.text_input("Name", placeholder="Your Name")
-        email = c2.text_input("Email", placeholder="name@company.com")
-        if st.form_submit_button("EMAIL ME MY FOUND SCORE ANALYSIS"):
-            if name and email and "@" in email: save_lead(name, email, st.session_state.url_input, data['score'], data['verdict'])
-            else: st.error("Invalid details.")
+        name_input = c1.text_input("Name", placeholder="Your Name")
+        email_input = c2.text_input("Email", placeholder="name@company.com")
+        # Full width submit button ensures it is centered within the form layout
+        if st.form_submit_button("EMAIL ME MY FOUND SCORE ANALYSIS", use_container_width=True):
+            if name_input and email_input and "@" in email_input: 
+                save_lead(name_input, email_input, st.session_state.url_input, data['score'], data['verdict'])
+            else: st.error("Please enter a valid name and email.")
 
     st.button("🔄 CHECK A COMPETITOR'S SCORE", on_click=lambda: st.session_state.update({"audit_data": None}), use_container_width=True)
 
