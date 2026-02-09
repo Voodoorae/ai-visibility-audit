@@ -507,7 +507,10 @@ st.markdown("""
     <p>© 2026 Found By AI. Property of Found By AI.</p>
     <p>Contact: <a href="mailto:hello@becomefoundbyai.com" style="color: #FFDA47;">hello@becomefoundbyai.com</a></p>
 </div>
-""", unsafe_allow_html=True)")
+File "/mount/src/ai-visibility-audit/app.py", line 510
+  """, unsafe_allow_html=True)")
+                              ^
+SyntaxError: unterminated string literal (detected at line 510)
 
     st.markdown('<div class="dashboard-head"><h3>Found By AI tests 8 Critical Platforms.</h3></div>', unsafe_allow_html=True)
 
