@@ -214,7 +214,7 @@ if not st.session_state.audit_data:
     with st.form("audit_form"):
         col1, col2 = st.columns([3, 1])
         url_input = col1.text_input("URL", placeholder="mybusiness.com", label_visibility="collapsed")
-        submit = col2.form_submit_button("AM I INVISIBLE? import streamlit as st
+        submit = col2.form_submit_button("AM I INVISIBLE?") import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import re
