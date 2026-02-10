@@ -214,7 +214,7 @@ if not st.session_state.audit_data:
     with st.form("audit_form"):
         col1, col2 = st.columns([3, 1])
         url_input = col1.text_input("URL", placeholder="mybusiness.com", label_visibility="collapsed")
-        submit = col2.form_submit_button("AM I INVISIBLE? (RUN FREE SCAN)")
+        submit = col2.form_submit_button("AM I INVISIBLE?")
 
     st.markdown('<div class="dashboard-head"><h3>Found By AI tests 8 Critical Platforms.</h3></div>', unsafe_allow_html=True)
 
