@@ -261,7 +261,7 @@ if st.session_state.audit_data:
     """, unsafe_allow_html=True)
     
     st.markdown('<h3 style="text-align: center; color: #FFDA47;">UNLOCK YOUR BUSINESS IN 2-3 HOURS</h3>', unsafe_allow_html=True)
-    st.markdown('<a href="https://go.foundbyai.online/get-toolkit" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>', unsafe_allow_html=True)
+    st.markdown('<a href="https://go.becomefoundbyai.com/audit-results" class="amber-btn">CLICK HERE TO FIX YOUR SCORE</a>', unsafe_allow_html=True)
     
     st.markdown("<h4 style='text-align: center; color: #E0E0E0; margin-top: 30px;'>Your Technical Audit Breakdown</h4>", unsafe_allow_html=True)
     b_col1, b_col2 = st.columns(2)
