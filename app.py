@@ -162,7 +162,7 @@ def save_lead(name, email, url, score, verdict, silent=False):
         if not silent: st.success(f"Report sent to {email}!")
     except: pass
 
-# --- ANALYSIS ENGINE (STRICT SCORING) ---
+# --- ANALYSIS ENGINE ---
 def analyze_website(raw_url):
     try:
         clean_url = raw_url.strip().lower().replace("https://", "").replace("http://", "").split('/')[0]
@@ -173,12 +173,10 @@ def analyze_website(raw_url):
         score = 0
         breakdown = {}
         
-        # 1. Foundation: Connectivity & Security (25pts)
         breakdown["Server Connectivity"] = {"points": 15, "max": 15, "note": "✅ Server responded successfully."}
         breakdown["SSL Security"] = {"points": 10, "max": 10, "note": "✅ SSL Certificate valid."}
         score += 25
 
-        # 2. Strict Schema Check (30pts)
         schemas = soup.find_all('script', type='application/ld+json')
         identity_pattern = r'"@type":\s*"(Organization|LocalBusiness|Person)"'
         has_identity_chip = any(re.search(identity_pattern, s.string) for s in schemas if s.string)
@@ -196,21 +194,18 @@ def analyze_website(raw_url):
         breakdown["Schema Code"] = {"points": schema_pts, "max": 30, "note": schema_note}
         score += schema_pts
         
-        # 3. Voice Readiness (20pts)
         voice_keywords = ['how', 'cost', 'where', 'faq', 'what is', 'price']
         voice_match = any(q in text for q in voice_keywords)
         voice_pts = 20 if voice_match else 0
         breakdown["Voice Search"] = {"points": voice_pts, "max": 20, "note": "Checked Headers for Q&A format."}
         score += voice_pts
         
-        # 4. Accessibility Structure (15pts)
         images = soup.find_all('img')
         missing_alt = any(not img.get('alt') for img in images) if images else False
         acc_pts = 15 if not missing_alt else 5
         breakdown["Accessibility"] = {"points": acc_pts, "max": 15, "note": "Checked Image Alt Tags and structure."}
         score += acc_pts
         
-        # 5. Local Signals (10pts)
         phone_pattern = r"\(?\d{3,5}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}"
         has_phone = re.search(phone_pattern, text)
         has_contact = "contact" in text or soup.find('a', href=re.compile(r'contact', re.I))
@@ -220,7 +215,6 @@ def analyze_website(raw_url):
         score += loc_pts
         
         final_score = score
-        
         if final_score <= 50: verdict, color = "INVISIBLE TO AI", "#FF4B4B"
         elif final_score <= 80: verdict, color = "PARTIALLY VISIBLE", "#FFDA47"
         else: verdict, color = "AI READY", "#28A745"
@@ -260,33 +254,35 @@ if not st.session_state.audit_data:
                 st.caption(p_caps[i])
             placeholders.append(p)
 
-    # Tweak 2: Updated Text in Did You Know Box
     st.markdown('<div class="did-you-know">💡 <strong>DID YOU KNOW?</strong><br>Voice agents like Siri and Alexa are also AI. If you are not visible to AI, they won\'t be recommending your business.</div>', unsafe_allow_html=True)
 
-    # Tweak 1: Additional URL Input below the text box
     st.markdown("<div class='input-header'>Ready to check your visibility?</div>", unsafe_allow_html=True)
     with st.form("audit_form_bottom"):
         col1_b, col2_b = st.columns([3, 1])
         url_input_bottom = col1_b.text_input("URL", placeholder="mybusiness.com", label_visibility="collapsed", key="url_bottom")
         submit_bottom = col2_b.form_submit_button("AM I INVISIBLE?")
 
-    # Form Submission Logic
     final_url = None
     if submit and url_input: final_url = url_input
     elif submit_bottom and url_input_bottom: final_url = url_input_bottom
 
     if final_url:
+        # STEP 1: Immediately trigger the background analysis so it runs DURING animation
+        with st.spinner("Connecting to AI Scanners..."):
+            audit_result = analyze_website(final_url)
+        
+        # STEP 2: Snappy Animation to confirm platforms
         for i, p in enumerate(placeholders):
             with p.container(border=True):
                 st.markdown(f"### {p_names[i]}")
                 st.markdown("Status: <span style='color:#FFDA47;'>**SCANNING...**</span>", unsafe_allow_html=True)
-            # Tweak 3: Increased sleep duration to coincide with processing
-            time.sleep(0.8) 
+            time.sleep(0.35) # Snappier pace
             with p.container(border=True):
                 st.markdown(f"### {p_names[i]}")
                 st.markdown("Status: <span style='color:#28A745;'>**CHECKED**</span>", unsafe_allow_html=True)
         
-        st.session_state.audit_data = analyze_website(final_url)
+        # STEP 3: Store and Rerun (No dead time because analyze_website is already done)
+        st.session_state.audit_data = audit_result
         st.session_state.url_input = final_url
         save_lead("Visitor", "N/A", final_url, st.session_state.audit_data['score'], st.session_state.audit_data['verdict'], silent=True)
         st.rerun()
@@ -313,7 +309,6 @@ if st.session_state.audit_data:
         if i % 2 == 0: b_col1.markdown(card, unsafe_allow_html=True)
         else: b_col2.markdown(card, unsafe_allow_html=True)
 
-    # --- EMAIL FORM ---
     st.markdown("<p style='color:#8899A6; text-align:center; margin-top:30px;'>Or get the detailed breakdown sent to your email:</p>", unsafe_allow_html=True)
     with st.form("email_form"):
         c1, c2 = st.columns(2)
