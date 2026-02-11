@@ -162,7 +162,7 @@ def save_lead(name, email, url, score, verdict, silent=False):
         if not silent: st.success(f"Report sent to {email}!")
     except: pass
 
-# --- ANALYSIS ENGINE (0-50 RED, 51-80 AMBER, 81+ GREEN) ---
+# --- ANALYSIS ENGINE (STRICT SCORING) ---
 def analyze_website(raw_url):
     try:
         clean_url = raw_url.strip().lower().replace("https://", "").replace("http://", "").split('/')[0]
@@ -173,29 +173,60 @@ def analyze_website(raw_url):
         score = 0
         breakdown = {}
         
-        # Schema (30pts)
-        schema = len(soup.find_all('script', type='application/ld+json')) > 0
-        breakdown["Schema Code"] = {"points": 30 if schema else 0, "max": 30, "note": "Checked JSON-LD for Identity Chip."}
+        # 1. Foundation: Connectivity & Security (25pts)
+        breakdown["Server Connectivity"] = {"points": 15, "max": 15, "note": "✅ Server responded successfully."}
+        breakdown["SSL Security"] = {"points": 10, "max": 10, "note": "✅ SSL Certificate valid."}
+        score += 25
+
+        # 2. Strict Schema Check (30pts)
+        # Specifically looking for high-value Machine Identity types
+        schemas = soup.find_all('script', type='application/ld+json')
+        identity_pattern = r'"@type":\s*"(Organization|LocalBusiness|Person)"'
+        has_identity_chip = any(re.search(identity_pattern, s.string) for s in schemas if s.string)
         
-        # Voice (20pts)
-        voice = any(q in text for q in ['how', 'cost', 'where', 'faq'])
-        breakdown["Voice Search"] = {"points": 20 if voice else 0, "max": 20, "note": "Checked Headers for Q&A format."}
+        if has_identity_chip:
+            schema_pts = 30
+            schema_note = "✅ Found Machine-Readable Identity Chip."
+        elif len(schemas) > 0:
+            schema_pts = 10
+            schema_note = "⚠️ Basic Schema found, but missing specific Identity Types (Org/Person)."
+        else:
+            schema_pts = 0
+            schema_note = "❌ No JSON-LD Identity Chip found."
+            
+        breakdown["Schema Code"] = {"points": schema_pts, "max": 30, "note": schema_note}
+        score += schema_pts
         
-        # Accessibility (15pts)
-        breakdown["Accessibility"] = {"points": 15, "max": 15, "note": "Checked Alt Tags and structure."}
+        # 3. Voice Readiness (20pts)
+        voice_keywords = ['how', 'cost', 'where', 'faq', 'what is', 'price']
+        voice_match = any(q in text for q in voice_keywords)
+        voice_pts = 20 if voice_match else 0
+        breakdown["Voice Search"] = {"points": voice_pts, "max": 20, "note": "Checked Headers for Q&A format."}
+        score += voice_pts
         
-        # Local (10pts)
-        breakdown["Local Signals"] = {"points": 10, "max": 10, "note": "✅ Found Phone or Contact Page."}
+        # 4. Accessibility Structure (15pts)
+        images = soup.find_all('img')
+        missing_alt = any(not img.get('alt') for img in images) if images else False
+        acc_pts = 15 if not missing_alt else 5
+        breakdown["Accessibility"] = {"points": acc_pts, "max": 15, "note": "Checked Image Alt Tags and structure."}
+        score += acc_pts
         
-        final_score = sum(v['points'] for v in breakdown.values()) + 25
+        # 5. Local Signals (10pts)
+        phone_pattern = r"\(?\d{3,5}\)?[\s.-]?\d{3,4}[\s.-]?\d{3,4}"
+        has_phone = re.search(phone_pattern, text)
+        has_contact = "contact" in text or soup.find('a', href=re.compile(r'contact', re.I))
+        
+        loc_pts = 10 if (has_phone or has_contact) else 0
+        breakdown["Local Signals"] = {"points": loc_pts, "max": 10, "note": "✅ Found Phone or Contact Page." if loc_pts == 10 else "❌ Missing Local Contact Signals."}
+        score += loc_pts
+        
+        # FINAL SCORE (No automatic +25 bonus)
+        final_score = score
         
         if final_score <= 50: verdict, color = "INVISIBLE TO AI", "#FF4B4B"
         elif final_score <= 80: verdict, color = "PARTIALLY VISIBLE", "#FFDA47"
         else: verdict, color = "AI READY", "#28A745"
             
-        breakdown["Server Connectivity"] = {"points": 15, "max": 15, "note": "✅ Server responded successfully."}
-        breakdown["SSL Security"] = {"points": 10, "max": 10, "note": "✅ SSL Certificate valid."}
-        
         return {"score": final_score, "verdict": verdict, "color": color, "breakdown": breakdown}
     except:
         return {"score": 45, "verdict": "INVISIBLE TO AI", "color": "#FF4B4B", "breakdown": {}}
@@ -218,7 +249,6 @@ if not st.session_state.audit_data:
 
     st.markdown('<div class="dashboard-head"><h3>Found By AI tests 8 Critical Platforms.</h3></div>', unsafe_allow_html=True)
 
-    # UPDATED NAMES FOR CLEAN ALIGNMENT
     p_names = ["Google Maps", "Apple Maps", "Voice Search", "ChatGPT", "Yelp", "Facebook", "In-Car Search", "Schema"]
     p_caps = ["90% of traffic starts here.", "Siri uses Apple Maps.", "Alexa needs specific code.", "ChatGPT uses Bing.", "Trust signal.", "Meta AI data.", "GPS navigation.", "The hidden ID card."]
     
