@@ -179,7 +179,6 @@ def analyze_website(raw_url):
         score += 25
 
         # 2. Strict Schema Check (30pts)
-        # Specifically looking for high-value Machine Identity types
         schemas = soup.find_all('script', type='application/ld+json')
         identity_pattern = r'"@type":\s*"(Organization|LocalBusiness|Person)"'
         has_identity_chip = any(re.search(identity_pattern, s.string) for s in schemas if s.string)
@@ -220,7 +219,6 @@ def analyze_website(raw_url):
         breakdown["Local Signals"] = {"points": loc_pts, "max": 10, "note": "✅ Found Phone or Contact Page." if loc_pts == 10 else "❌ Missing Local Contact Signals."}
         score += loc_pts
         
-        # FINAL SCORE (No automatic +25 bonus)
         final_score = score
         
         if final_score <= 50: verdict, color = "INVISIBLE TO AI", "#FF4B4B"
@@ -262,21 +260,35 @@ if not st.session_state.audit_data:
                 st.caption(p_caps[i])
             placeholders.append(p)
 
-    st.markdown('<div class="did-you-know">💡 <strong>DID YOU KNOW?</strong><br>Remember voice agents like Siri and Alexa are AI. If you are not visible to AI, they won\'t be recommending your business.</div>', unsafe_allow_html=True)
+    # Tweak 2: Updated Text in Did You Know Box
+    st.markdown('<div class="did-you-know">💡 <strong>DID YOU KNOW?</strong><br>Voice agents like Siri and Alexa are also AI. If you are not visible to AI, they won\'t be recommending your business.</div>', unsafe_allow_html=True)
 
-    if submit and url_input:
+    # Tweak 1: Additional URL Input below the text box
+    st.markdown("<div class='input-header'>Ready to check your visibility?</div>", unsafe_allow_html=True)
+    with st.form("audit_form_bottom"):
+        col1_b, col2_b = st.columns([3, 1])
+        url_input_bottom = col1_b.text_input("URL", placeholder="mybusiness.com", label_visibility="collapsed", key="url_bottom")
+        submit_bottom = col2_b.form_submit_button("AM I INVISIBLE?")
+
+    # Form Submission Logic
+    final_url = None
+    if submit and url_input: final_url = url_input
+    elif submit_bottom and url_input_bottom: final_url = url_input_bottom
+
+    if final_url:
         for i, p in enumerate(placeholders):
             with p.container(border=True):
                 st.markdown(f"### {p_names[i]}")
                 st.markdown("Status: <span style='color:#FFDA47;'>**SCANNING...**</span>", unsafe_allow_html=True)
-            time.sleep(0.4)
+            # Tweak 3: Increased sleep duration to coincide with processing
+            time.sleep(0.8) 
             with p.container(border=True):
                 st.markdown(f"### {p_names[i]}")
                 st.markdown("Status: <span style='color:#28A745;'>**CHECKED**</span>", unsafe_allow_html=True)
         
-        st.session_state.audit_data = analyze_website(url_input)
-        st.session_state.url_input = url_input
-        save_lead("Visitor", "N/A", url_input, st.session_state.audit_data['score'], st.session_state.audit_data['verdict'], silent=True)
+        st.session_state.audit_data = analyze_website(final_url)
+        st.session_state.url_input = final_url
+        save_lead("Visitor", "N/A", final_url, st.session_state.audit_data['score'], st.session_state.audit_data['verdict'], silent=True)
         st.rerun()
 
 # --- RESULTS VIEW (STATE 2) ---
@@ -301,7 +313,7 @@ if st.session_state.audit_data:
         if i % 2 == 0: b_col1.markdown(card, unsafe_allow_html=True)
         else: b_col2.markdown(card, unsafe_allow_html=True)
 
-    # --- EMAIL FORM (CENTERED & FULL WIDTH) ---
+    # --- EMAIL FORM ---
     st.markdown("<p style='color:#8899A6; text-align:center; margin-top:30px;'>Or get the detailed breakdown sent to your email:</p>", unsafe_allow_html=True)
     with st.form("email_form"):
         c1, c2 = st.columns(2)
